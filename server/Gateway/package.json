@@ -1,7 +1,7 @@
 {
-  "name": "authentication",
+  "name": "Gateway",
   "version": "1.0.0",
-  "description": "Authentication Microservice",
+  "description": "Gateway Microservice",
   "license": "MIT",
   "author": "IUT_Dhongorsho",
   "type": "module",

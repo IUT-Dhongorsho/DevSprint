@@ -7,11 +7,11 @@ services:
     environment:
       POSTGRES_USER: dhongorsho
       POSTGRES_PASSWORD: dhongorsho123
-      POSTGRES_DB: auth_db
+      POSTGRES_DB: user_db
     ports:
       - "5433:5432"       # different host port to avoid conflicts
     volumes:
-      - auth-db-data:/var/lib/postgresql/data
+      - user-db-data:/var/lib/postgresql/data
       - ./Database:/docker-entrypoint-initdb.d
 
   dev-sprint-redis:
@@ -33,19 +33,19 @@ services:
       REDIS_URL: "redis://dev-sprint-redis:6379"
       PORT: 4001
       JWT_SECRET: "dhongorsho"
-      AUTH_SERVICE_URL: "http://dev-sprint-authentication:4002"
+      IDENTITY_SERVICE_URL: "http://dev-sprint-identity:4002"
     ports:
       - "8001:4001"
     restart: always
 
-  authentication:
-    build: ./Authentication
-    container_name: dev-sprint-authentication
+  identity:
+    build: ./Identity
+    container_name: dev-sprint-identity
     depends_on:
       - dev-sprint-postgres
       - dev-sprint-redis
     environment:
-      DATABASE_URL: "postgresql://dhongorsho:dhongorsho123@dev-sprint-postgres:5432/auth_db?schema=public"
+      DATABASE_URL: "postgresql://dhongorsho:dhongorsho123@dev-sprint-postgres:5432/user_db?schema=public"
       REDIS_URL: "redis://dev-sprint-redis:6379"
       PORT: 4002
       JWT_SECRET: "dhongorsho"
@@ -55,5 +55,5 @@ services:
 
 
 volumes:
-  auth-db-data:
+  user-db-data:
   redis-data:

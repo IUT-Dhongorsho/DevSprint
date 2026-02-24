@@ -5,7 +5,7 @@ import { encodeJwt } from "../utils/jwt.js";
 
 export const loginUser = async (req: Request, res: Response) => {
     const { email, password } = req.body;
-    console.log("Here from login User")
+    console.log("Here from login User", req.body);
     try {
         if (email && password) {
             const response = await prisma.user.findUnique({
@@ -14,7 +14,7 @@ export const loginUser = async (req: Request, res: Response) => {
             if (!response) return res.status(404).json({ message: "You must register first" });
             if (response?.password) {
                 // console.log();
-                const hasMatched = await argon.verify(password, response.password)
+                const hasMatched = await argon.verify(response.password, password);
                 if (!hasMatched) return res.status(400).json("Invalid Password");
                 else {
                     const token = encodeJwt(response.id);
@@ -31,7 +31,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         if (error.code === "P2022") res.status(404).json({ message: "You must register first" });
-        console.log(error.code);
+        console.log(error);
         res.status(500).json({ message: "Something went wrong while logging you in" })
     }
 }
@@ -65,5 +65,5 @@ export const registerUser = async (req: Request, res: Response) => {
 };
 
 export const getStatus = async (req: Request, res: Response) => {
-    res.status(200).json({ message: "Authentication Service is up and running" });
+    res.status(200).json({ message: "Identity Service is up and running" });
 }   
