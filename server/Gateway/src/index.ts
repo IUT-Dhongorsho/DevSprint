@@ -11,8 +11,17 @@ const PORT = process.env.PORT || 8001;
 
 // Middleware
 app.use(cors());
+app.use(
+    "/api/auth",
+    createProxyMiddleware({
+        target: process.env.AUTH_SERVICE_URL || "http://dev-sprint-authentication:8002",
+        changeOrigin: true,
+        pathRewrite: {
+            "^/api/auth": ""
+        },
+    })
+);
 app.use(express.json());
-
 // Routes
 app.get('/api', (req, res) => {
     res.status(200).json({ message: "Gateway Service is up and running" });
@@ -22,13 +31,18 @@ app.get('/api', (req, res) => {
 app.use(
     "/api/auth",
     createProxyMiddleware({
-        target: process.env.AUTH_SERVICE_URL || "http://dev-sprint-authentication:4002",
+        target: `${process.env.AUTH_SERVICE_URL}` || "http://dev-sprint-authentication:4002",
         changeOrigin: true,
-        pathRewrite: { "^/auth": "" }, // strip prefix if needed
+        pathRewrite: { "^/": '/' },
     })
 );
 
+// app.post('/api/auth/register', (req, res) => {
+//     console.log(req.body);
+//     res.status(201).json({ message: "Created successfully" })
+// })
+
 
 app.listen(PORT, () => {
-    console.log(`Authentication Service is running on port ${PORT}`);
+    console.log(`Gateway Service is running on port ${PORT}`);
 }); 

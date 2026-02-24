@@ -5,6 +5,7 @@ import { encodeJwt } from "../utils/jwt.js";
 
 export const loginUser = async (req: Request, res: Response) => {
     const { email, password } = req.body;
+    console.log("Here from login User")
     try {
         if (email && password) {
             const response = await prisma.user.findUnique({
@@ -37,7 +38,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
 export const registerUser = async (req: Request, res: Response) => {
     const { name, email, password, confirmPassword } = req.body;
-
+    console.log("Here at Register User", req.body);
     try {
         if (!email || password !== confirmPassword) {
             return res.status(400).json({ message: "Bad Request: Invalid email or password" });

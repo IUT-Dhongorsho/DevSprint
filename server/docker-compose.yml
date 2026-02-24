@@ -23,6 +23,21 @@ services:
     volumes:
       - redis-data:/data
 
+  gateway:
+    build: ./Gateway
+    container_name: dev-sprint-gateway
+    depends_on:
+      - dev-sprint-postgres
+      - dev-sprint-redis
+    environment:
+      REDIS_URL: "redis://dev-sprint-redis:6379"
+      PORT: 4001
+      JWT_SECRET: "dhongorsho"
+      AUTH_SERVICE_URL: "http://dev-sprint-authentication:4002"
+    ports:
+      - "8001:4001"
+    restart: always
+
   authentication:
     build: ./Authentication
     container_name: dev-sprint-authentication
@@ -36,6 +51,8 @@ services:
       JWT_SECRET: "dhongorsho"
     ports:
       - "8002:4002"
+    restart: always
+
 
 volumes:
   auth-db-data:

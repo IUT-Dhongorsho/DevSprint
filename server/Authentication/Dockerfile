@@ -1,4 +1,4 @@
-# Node service only
+# Node service only for Authentication, using Prisma 
 FROM node:24-alpine
 
 WORKDIR /usr/src/app
@@ -8,6 +8,9 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 4000
+RUN npx prisma generate
 
-CMD ["npm", "run", "dev"]
+EXPOSE 4002
+
+
+CMD ["sh", "-c", "npx prisma migrate dev --name init  && npm run dev"]
