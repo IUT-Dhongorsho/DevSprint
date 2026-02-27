@@ -34,6 +34,7 @@ services:
       PORT: 4001
       JWT_SECRET: "dhongorsho"
       IDENTITY_SERVICE_URL: "http://dev-sprint-identity:4002"
+      INVENTORY_SERVICE_URL: "http://dev-sprint-inventory:4003"
     ports:
       - "8001:4001"
     restart: always
@@ -53,7 +54,36 @@ services:
       - "8002:4002"
     restart: always
 
+  inventory:
+    build: ./Inventory
+    container_name: dev-sprint-inventory
+    depends_on:
+      - dev-sprint-postgres
+      - dev-sprint-redis
+    environment:
+      DATABASE_URL: "postgresql://dhongorsho:dhongorsho123@dev-sprint-postgres:5432/inventory_db?schema=public"
+      REDIS_URL: "redis://dev-sprint-redis:6379"
+      PORT: 4003
+      RABBITMQ_URL: "amqp://IUT_Dhongorsho:Dhongorsho123@rabbitmq:5672"  
+    ports:
+      - "8003:4003"
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq_service
+    ports:
+      - "5672:5672"   # AMQP protocol port
+      - "15672:15672" # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: "IUT_Dhongorsho"
+      RABBITMQ_DEFAULT_PASS: "Dhongorsho123"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: always
+
 
 volumes:
   user-db-data:
   redis-data:
+  rabbitmq_data:
