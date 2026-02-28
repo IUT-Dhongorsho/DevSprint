@@ -35,7 +35,14 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
-  };
+
+    //TO BYPASS Login
+
+//     e.preventDefault();
+//   // TEMPORARY BYPASS: No backend needed
+//   localStorage.setItem('token', 'mock_token_123'); 
+//   navigate('/student');
+};
 
   return (
     <PageWrapper>

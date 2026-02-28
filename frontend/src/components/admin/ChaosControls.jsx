@@ -1,6 +1,6 @@
 import api from '../../services/api';
 
-const ChaosControls = () => {
+export const ChaosControls = () => {
   const killService = async (serviceName) => {
     try {
       await api.post('/chaos/kill', { service: serviceName });

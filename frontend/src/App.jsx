@@ -4,24 +4,25 @@ import Login from './pages/Login';
 import StudentUI from './pages/StudentUI';
 import AdminUI from './pages/AdminUI';
 import Navbar from './components/common/Navbar';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-[#fcfdff]"> {/* Your Light Blue/White Tint */}
+    <AuthProvider>
+      <Router>
         <Navbar />
-        <main className="container mx-auto px-4 py-8">
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<Login />} />
-              <Route path="/student" element={<StudentUI />} />
-              <Route path="/admin" element={<AdminUI />} />
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </AnimatePresence>
-        </main>
-      </div>
-    </Router>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/student" element={
+            <ProtectedRoute> <StudentUI /> </ProtectedRoute>
+          } />
+          <Route path="/admin" element={
+            <ProtectedRoute> <AdminUI /> </ProtectedRoute>
+          } />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 
