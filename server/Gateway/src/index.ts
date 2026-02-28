@@ -27,7 +27,7 @@ app.use((req, res, next) => {
 app.use(
     "/api/identity",
     createProxyMiddleware({
-        target: process.env.IDENTITY_SERVICE_URL || "http://dev-sprint-identity:8002",
+        target: process.env.IDENTITY_SERVICE_URL || "http://dev-sprint-identity:4002",
         changeOrigin: true,
         pathRewrite: {
             "^/api/identity": ""
@@ -39,11 +39,38 @@ app.use(
     userGuard,
     stockGuard,
     createProxyMiddleware({
-        target: process.env.INVENTORY_SERVICE_URL || "http://dev-sprint-inventory:8003",
+        target: process.env.INVENTORY_SERVICE_URL || "http://dev-sprint-inventory:4003",
         changeOrigin: true,
         pathRewrite: {
             "^/api/inventory": ""
         },
+        on: {
+            proxyReq: (proxyReq, req) => {
+                if (req.headers.userId) {
+                    proxyReq.setHeader("user_id", req.headers.userId);
+                }
+            },
+        }
+
+    })
+);
+app.use(
+    "/api/notifications",
+    userGuard,
+    createProxyMiddleware({
+        target: process.env.NOTIFICATION_SERVICE_URL || "http://dev-sprint-notification:4005",
+        changeOrigin: true,
+        pathRewrite: {
+            "^/api/notifications": ""
+        },
+        on: {
+            proxyReq: (proxyReq, req) => {
+                if (req.headers.userId) {
+                    proxyReq.setHeader("user_id", req.headers.userId);
+                }
+            },
+        }
+
     })
 );
 app.use(express.json());

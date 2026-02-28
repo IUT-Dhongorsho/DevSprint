@@ -1,89 +1,152 @@
+// controllers/stock.controller.ts
+
 import { Request, Response } from "express";
-import prisma from "../utils/prisma.js";
-import { redis } from '../utils/redis.js';
+import { StockService } from "../services/stock.service.js";
+
+export const getStockQty = async (req: Request, res: Response) => {
+    try {
+        const forDate = new Date().toISOString().split('T')[0];
+        const reformat = new Date(forDate).toISOString();
+        const qty = await StockService.getStockQty(reformat);
+
+        if (qty > 0) {
+            return res.status(200).json({
+                payload: { stock: { quantity: qty } },
+                message: "Stock data found",
+            });
+        }
+
+        return res.status(404).json({
+            message: "Stock count for the day was not found.",
+        });
+    } catch (err: any) {
+        return res.status(500).json({
+            message: "Failed to get stock count.",
+            error: err.message,
+        });
+    }
+};
+
 
 
 export const getStock = async (req: Request, res: Response) => {
     try {
-        const d = new Date(Date.now()).toISOString();
-        console.log(d)
-        const today = new Date().toISOString().split("T")[0];
-        const formattedDate = new Date(today).toISOString();
-        console.log(formattedDate);
-        const qty = await prisma.stock.findUnique({
-            where: { forDate: formattedDate },
-            select: {
-                quantity: true
-            }
-        })
+        const { id } = req.params;
 
-        if (qty) {
-            console.log(qty);
-            const cacheKey = `stock:${today.split("T")[0]}`;
-            console.log("Caching stock data with key:", cacheKey);
-            redis.set(cacheKey, JSON.stringify({ stock: qty.quantity }), { EX: 15 }).catch((e) => {
-                console.error("Redis set failed:", e.message);
-            });
-            return res.status(200).json({ payload: { stock: qty }, message: "Stock data found" });
+        if (!id || typeof id !== 'string') {
+            return res.status(400).json({ message: "Missing stock id" });
         }
-        else {
-            console.error("Stock entry for today was not found.")
-            return res.status(404).json({ message: "Stock entry for today was not found." });
+
+        const stock = await StockService.getStockById(id);
+
+        if (!stock) {
+            return res.status(404).json({ message: "Stock not found" });
         }
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to get stock.", error: err.message });
+
+        return res.status(200).json({
+            payload: { stock },
+            message: "Stock data found",
+        });
+    } catch (err: any) {
+        return res.status(500).json({
+            message: "Failed to get stock entry",
+            error: err.message,
+        });
     }
-}
+};
+export const getStocksByDate = async (req: Request, res: Response) => {
+    try {
+        const { forDate } = req.params;
+        console.log("From controller", forDate);
+        if (!forDate || typeof forDate != 'string') {
+            return res.status(400).json({ message: "Missing date" });
+        }
+
+        const stocks = await StockService.getStocksByDate(forDate);
+        // console.log(stocks);
+        if (!stocks) {
+            return res.status(404).json({ message: "Stock entries not found" });
+        }
+
+        return res.status(200).json({
+            payload: { stocks },
+            message: "Stock data found",
+        });
+    } catch (err: any) {
+        return res.status(500).json({
+            message: "Failed to get stock entry",
+            error: err.message,
+        });
+    }
+};
+
 
 export const createStock = async (req: Request, res: Response) => {
-    const { quantity, forDate } = req.body;
-    const formattedDate = new Date(forDate).toISOString().split("T")[0];
-    const reformat = new Date(formattedDate).toISOString();
     try {
-        // const today = new Date().toISOString().split("T")[0];
-        const stock = await prisma.stock.create({
-            data: {
-                quantity: quantity,
-                forDate: reformat
-            }
-        })
+        const { quantity, forDate } = req.body;
 
-        if (stock) {
-            console.log(stock);
-            return res.status(201).json({ payload: { stock: stock }, message: "Stock created successfully" });
+        if (!quantity || !forDate) {
+            return res.status(400).json({
+                message: "quantity and forDate are required",
+            });
         }
-        else {
-            console.error("Stock entry was not created .")
-            return res.status(404).json({ message: "Stock entry was not created." });
-        }
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to create stock.", error: err.message });
+
+        const result = await StockService.createStock(quantity, forDate);
+
+        return res.status(201).json({
+            payload: { stock: result },
+            message: "Stock created successfully",
+        });
+    } catch (err: any) {
+        return res.status(500).json({
+            message: "Failed to create stock",
+            error: err.message,
+        });
     }
-}
+};
+
+
+export const deleteStocks = async (req: Request, res: Response) => {
+    try {
+        const { forDate } = req.params;
+
+        if (!forDate || typeof forDate !== 'string') {
+            return res.status(400).json({ message: "Missing forDate" });
+        }
+
+        const result = await StockService.deleteStocksByDate(forDate);
+
+        return res.status(200).json({
+            payload: { stocks: result },
+            message: "Stock entries deleted successfully",
+        });
+    } catch (err: any) {
+        return res.status(500).json({
+            message: "Failed to delete stock entries",
+            error: err.message,
+        });
+    }
+};
+
+
 export const deleteStock = async (req: Request, res: Response) => {
-    const { forDate } = req.params;
     try {
-        if (forDate && typeof forDate === "string") {
-            const formattedDate = new Date(forDate).toISOString();
-            const stock = await prisma.stock.delete({
-                where: {
-                    forDate: formattedDate
-                }
-            })
+        const { stockId } = req.params;
 
-            if (stock) {
-                console.log(stock);
-                return res.status(200).json({ payload: { stock: stock }, message: "Stock deleted successfully" });
-            }
-            else {
-                console.error("Stock entry was not deleted .")
-                return res.status(404).json({ message: "Stock entry was not deleted." });
-            }
+        if (!stockId || typeof stockId !== 'string') {
+            return res.status(400).json({ message: "Missing stockId" });
         }
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to delete stock.", error: err.message });
+
+        const result = await StockService.deleteStockById(stockId);
+
+        return res.status(200).json({
+            payload: { stock: result },
+            message: "Stock entry deleted successfully",
+        });
+    } catch (err: any) {
+        return res.status(500).json({
+            message: "Failed to delete stock entry",
+            error: err.message,
+        });
     }
-}
+};

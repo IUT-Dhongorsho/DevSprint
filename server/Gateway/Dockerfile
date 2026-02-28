@@ -1,4 +1,3 @@
-# Node service only for Identity, using Prisma 
 FROM node:24-alpine
 
 WORKDIR /usr/src/app

@@ -24,7 +24,7 @@ export const stockGuard = async (
 
         // Try Redis
         try {
-            stockData = await redis.get(cacheKey);
+            stockData = await redis.get(cacheKey) as string;
             console.log("Stock data from cache:", stockData);
         } catch (redisError: any) {
             console.error("Redis error:", redisError.message);
@@ -43,12 +43,13 @@ export const stockGuard = async (
                 process.env.INVENTORY_SERVICE_URL || "http://dev-sprint-inventory:8007";
 
             const response = await axios.get(`${inventoryUrl}/stock`);
+            // console.log(response)
             const qty = response.data?.payload?.stock?.quantity;
-
+            console.log(qty);
             if (qty > 0) {
                 // update cache
                 try {
-                    await redis.set(cacheKey, JSON.stringify({ stock: qty }), { EX: 15 });
+                    await redis.set(cacheKey, JSON.stringify({ stock: qty }), { EX: 100 });
                 } catch (e) {
                     console.error("Redis set failed:", (e as any).message);
                 }
@@ -58,6 +59,7 @@ export const stockGuard = async (
 
             return res.status(409).json({ message: "Insufficient stock" });
         } catch (err: any) {
+            // console.log(err);
             console.error("Inventory fetch failed:", err.message);
             return res.status(503).json({ message: "Inventory unavailable", error: err.message });
         }

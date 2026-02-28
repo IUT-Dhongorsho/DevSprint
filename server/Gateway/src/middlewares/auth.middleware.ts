@@ -3,11 +3,9 @@ import { decodeJwt } from "../utils/jwt.js";
 import { redis } from "../utils/redis.js";
 import axios from "axios";
 
-interface AuthenticatedRequest extends Request {
-    user?: any;
-}
 
-export const userGuard = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+
+export const userGuard = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const authHeader = req.headers.authorization;
         if (!authHeader?.startsWith("Bearer ")) {
@@ -26,15 +24,16 @@ export const userGuard = async (req: AuthenticatedRequest, res: Response, next: 
         let userData: string | null = null;
 
         try {
-            userData = await redis.get(`user:${userId}`);
-            console.log("User data from cache:", JSON.parse(userData));
+            userData = await redis.get(`user:${userId}`) as string;
+            // console.log("User data from cache:", JSON.parse(userData));
         } catch (redisError: any) {
             console.error("Redis error:", redisError.message);
             // DO NOT return — just continue
         }
 
         if (userData) {
-            req.user = JSON.parse(userData);
+            console.log("From cache user ID: ", JSON.parse(userData).id)
+            req.headers.userId = JSON.parse(userData).id;
             return next();
         }
 
@@ -46,8 +45,8 @@ export const userGuard = async (req: AuthenticatedRequest, res: Response, next: 
             if (!userDataFromSvc) {
                 return res.status(403).json({ message: "Login required" });
             }
-
-            req.user = userDataFromSvc;
+            console.log("From Identity Service", userDataFromSvc.id);
+            req.headers.userId = userDataFromSvc.id;
 
             // Try caching in Redis, but don't block the request
             try {

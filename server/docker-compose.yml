@@ -1,6 +1,7 @@
 version: "3.9"
 
 services:
+# Database Service:
   dev-sprint-postgres:
     image: postgres:16-alpine
     container_name: dev-sprint-postgres
@@ -13,7 +14,9 @@ services:
     volumes:
       - user-db-data:/var/lib/postgresql/data
       - ./Database:/docker-entrypoint-initdb.d
+    
 
+# Caching Service:
   dev-sprint-redis:
     image: redis:7-alpine
     container_name: dev-sprint-redis
@@ -22,7 +25,24 @@ services:
     command: ["redis-server", "--save", "60", "1", "--appendonly", "yes"]
     volumes:
       - redis-data:/data
+    
 
+# RabbitMQ Service:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq_service
+    ports:
+      - "5672:5672"   # AMQP protocol port
+      - "15672:15672" # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: "IUT_Dhongorsho"
+      RABBITMQ_DEFAULT_PASS: "Dhongorsho123"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: always
+    
+
+# Gateway Service:
   gateway:
     build: ./Gateway
     container_name: dev-sprint-gateway
@@ -36,9 +56,11 @@ services:
       IDENTITY_SERVICE_URL: "http://dev-sprint-identity:4002"
       INVENTORY_SERVICE_URL: "http://dev-sprint-inventory:4003"
     ports:
-      - "8001:4001"
+      - "5001:4001"
     restart: always
 
+
+# Idnetity Service:
   identity:
     build: ./Identity
     container_name: dev-sprint-identity
@@ -51,9 +73,11 @@ services:
       PORT: 4002
       JWT_SECRET: "dhongorsho"
     ports:
-      - "8002:4002"
+      - "5002:4002"
     restart: always
 
+
+# Inventory Service:
   inventory:
     build: ./Inventory
     container_name: dev-sprint-inventory
@@ -66,20 +90,41 @@ services:
       PORT: 4003
       RABBITMQ_URL: "amqp://IUT_Dhongorsho:Dhongorsho123@rabbitmq:5672"  
     ports:
-      - "8003:4003"
+      - "5003:4003"
     restart: always
 
-  rabbitmq:
-    image: rabbitmq:4-management
-    container_name: rabbitmq_service
-    ports:
-      - "5672:5672"   # AMQP protocol port
-      - "15672:15672" # Management UI port
+
+# Ktichen Service:
+  kitchen:
+    build: ./Kitchen
+    container_name: dev-sprint-ktichen
+    depends_on:
+      - dev-sprint-postgres
+      - dev-sprint-redis
     environment:
-      RABBITMQ_DEFAULT_USER: "IUT_Dhongorsho"
-      RABBITMQ_DEFAULT_PASS: "Dhongorsho123"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      DATABASE_URL: "postgresql://dhongorsho:dhongorsho123@dev-sprint-postgres:5432/kitchen_db?schema=public"
+      REDIS_URL: "redis://dev-sprint-redis:6379"
+      PORT: 4004
+      RABBITMQ_URL: "amqp://IUT_Dhongorsho:Dhongorsho123@rabbitmq:5672"  
+    ports:
+      - "5004:4004"
+    restart: always
+
+
+# Notification Service:
+  notification:
+    build: ./Notification
+    container_name: dev-sprint-notification
+    depends_on:
+      - dev-sprint-postgres
+      - dev-sprint-redis
+    environment:
+      DATABASE_URL: "postgresql://dhongorsho:dhongorsho123@dev-sprint-postgres:5432/inventory_db?schema=public"
+      REDIS_URL: "redis://dev-sprint-redis:6379"
+      PORT: 4004
+      RABBITMQ_URL: "amqp://IUT_Dhongorsho:Dhongorsho123@rabbitmq:5672"  
+    ports:
+      - "5005:4005"
     restart: always
 
 

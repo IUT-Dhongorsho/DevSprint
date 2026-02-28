@@ -13,28 +13,36 @@ datasource db {
   provider = "postgresql"
 }
 
+enum StockStatus {
+  AVAILABLE
+  RESERVED
+  USED
+}
 model Stock {
   id        String      @id @db.Uuid @default(uuid())
-  forDate   DateTime    @unique @db.Timestamp(6) 
-  quantity  Int         
+  forDate   DateTime    @db.Date 
+  status    StockStatus @default(AVAILABLE)
   createdAt DateTime    @db.Timestamp(6) @default(now())
   updatedAt DateTime    @updatedAt
-
-  @@index([forDate])
+  order     Order[]
+  @@index([id])
 }
 
 enum OrderStatus {
   PENDING
-  STOCK_VERIFIED
-  IN_KITCHEN
-  READY 
-  CANCELLED 
+  // STOCK_VERIFIED
+  // IN_KITCHEN
+  // READY
+  COMPLETED
   FAILED
 }
 
 model Order{
   id  String @id @db.Uuid @default(uuid())
   user_id String @db.Uuid
+  stock_id String @db.Uuid
+  stock Stock @relation(fields: [stock_id], references: [id] )
+  forDate DateTime @unique @db.Date
   status OrderStatus @default(PENDING)
   createdAt DateTime @db.Timestamp(6) @default(now()) 
   updatedAt DateTime @updatedAt
