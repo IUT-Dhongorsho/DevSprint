@@ -59,7 +59,9 @@ export const stockGuard = async (
 
             return res.status(409).json({ message: "Insufficient stock" });
         } catch (err: any) {
-            // console.log(err);
+            if (err.response.status === 404) {
+                return res.status(404).json({ message: "Stock Unavailable" });
+            }
             console.error("Inventory fetch failed:", err.message);
             return res.status(503).json({ message: "Inventory unavailable", error: err.message });
         }

@@ -31,3 +31,15 @@ export const getUser = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const deleteAllUsers = async (req: Request, res: Response) => {
+    try {
+        const deleted = await prisma.user.deleteMany();
+        if (deleted) {
+            return res.status(200).json({ message: "All users deleted" });
+        }
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Failed to delete all users", error: err.message })
+    }
+}

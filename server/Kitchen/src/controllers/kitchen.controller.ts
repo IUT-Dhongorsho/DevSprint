@@ -5,6 +5,9 @@ import { KitchenService } from "../services/kitchen.service.js";
 
 export const getJob = async (req: Request, res: Response) => {
     const { jobId } = req.params;
+    if (!jobId || typeof jobId !== 'string') {
+        return res.status(400).json("Invalid JobId")
+    }
     try {
         const job = await KitchenService.getJobById(jobId);
         if (!job) return res.status(404).json({ message: "Job not found" });
@@ -14,8 +17,11 @@ export const getJob = async (req: Request, res: Response) => {
     }
 }
 
-export const markCompleted = async (req: Request, res: Response) => {
+export const markJobCompleted = async (req: Request, res: Response) => {
     const { jobId } = req.params;
+    if (!jobId || typeof jobId !== 'string') {
+        return res.status(400).json("Invalid JobId")
+    }
     try {
         const job = await KitchenService.markCompleted(jobId);
         res.status(200).json({ payload: job });

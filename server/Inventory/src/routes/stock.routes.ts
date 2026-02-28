@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { createStock, deleteStock, getStock, getStockQty, getStocksByDate } from "../controllers/stock.controller.js";
+import { createStock, deleteStock, deleteStocks, getStock, getStockQty, getStocksByDate } from "../controllers/stock.controller.js";
 
 const router = Router();
 
-router.get('/', getStockQty);
-router.get('/id/:id', getStock);
 router.get('/date/:forDate', getStocksByDate);
+router.get('/:id', getStock);
+router.get('/', getStockQty);
 router.post('/', createStock);
-router.delete('/:forDate', deleteStock);
+router.delete('/date/:forDate', deleteStocks);
+router.delete('/:id', deleteStock);
 
 export default router;

@@ -31,9 +31,9 @@ export class StockService {
     }
 
     static async getStocksByDate(forDate: string) {
+        console.log("forDate", forDate)
         const formattedDate = new Date(forDate).toISOString();
-        const reformat = formattedDate.split['T'][0];
-        console.log("From get Stocks by Date service, ", reformat);
+        const reformat = new Date(formattedDate.split('T')[0]).toISOString()
         return prisma.stock.findMany({
             where: {
                 forDate: reformat

@@ -14,7 +14,7 @@ services:
     volumes:
       - user-db-data:/var/lib/postgresql/data
       - ./Database:/docker-entrypoint-initdb.d
-    
+    profiles: ["dev"]
 
 # Caching Service:
   dev-sprint-redis:
@@ -25,7 +25,7 @@ services:
     command: ["redis-server", "--save", "60", "1", "--appendonly", "yes"]
     volumes:
       - redis-data:/data
-    
+    profiles: ["dev"]
 
 # RabbitMQ Service:
   rabbitmq:
@@ -40,7 +40,7 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     restart: always
-    
+    profiles: ["dev"]
 
 # Gateway Service:
   gateway:

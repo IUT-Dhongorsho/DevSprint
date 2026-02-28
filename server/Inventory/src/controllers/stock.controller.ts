@@ -48,6 +48,12 @@ export const getStock = async (req: Request, res: Response) => {
             message: "Stock data found",
         });
     } catch (err: any) {
+        console.log(err);
+        if (err.code === 'P2007') {
+            return res.status(400).json({
+                message: "Invalid Stock ID",
+            });
+        }
         return res.status(500).json({
             message: "Failed to get stock entry",
             error: err.message,
@@ -61,7 +67,6 @@ export const getStocksByDate = async (req: Request, res: Response) => {
         if (!forDate || typeof forDate != 'string') {
             return res.status(400).json({ message: "Missing date" });
         }
-
         const stocks = await StockService.getStocksByDate(forDate);
         // console.log(stocks);
         if (!stocks) {
@@ -73,6 +78,7 @@ export const getStocksByDate = async (req: Request, res: Response) => {
             message: "Stock data found",
         });
     } catch (err: any) {
+        console.log(err)
         return res.status(500).json({
             message: "Failed to get stock entry",
             error: err.message,
@@ -121,6 +127,7 @@ export const deleteStocks = async (req: Request, res: Response) => {
             message: "Stock entries deleted successfully",
         });
     } catch (err: any) {
+        console.log(err);
         return res.status(500).json({
             message: "Failed to delete stock entries",
             error: err.message,
@@ -131,13 +138,13 @@ export const deleteStocks = async (req: Request, res: Response) => {
 
 export const deleteStock = async (req: Request, res: Response) => {
     try {
-        const { stockId } = req.params;
+        const { id } = req.params;
 
-        if (!stockId || typeof stockId !== 'string') {
-            return res.status(400).json({ message: "Missing stockId" });
+        if (!id || typeof id !== 'string') {
+            return res.status(400).json({ message: "Missing id" });
         }
 
-        const result = await StockService.deleteStockById(stockId);
+        const result = await StockService.deleteStockById(id);
 
         return res.status(200).json({
             payload: { stock: result },

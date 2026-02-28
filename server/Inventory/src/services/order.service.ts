@@ -13,6 +13,9 @@ export class OrderService {
             include: { ticket: true, stock: true },
         });
     }
+    static async getAllOrders() {
+        return prisma.order.findMany();
+    }
 
     static async createOrder(userId: string, forDate: string) {
 

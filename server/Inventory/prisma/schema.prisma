@@ -40,8 +40,8 @@ enum OrderStatus {
 model Order{
   id  String @id @db.Uuid @default(uuid())
   user_id String @db.Uuid
-  stock_id String @db.Uuid
-  stock Stock @relation(fields: [stock_id], references: [id] )
+  stock_id String? @db.Uuid
+  stock Stock? @relation(fields: [stock_id], references: [id], onDelete: SetNull)
   forDate DateTime @unique @db.Date
   status OrderStatus @default(PENDING)
   createdAt DateTime @db.Timestamp(6) @default(now()) 

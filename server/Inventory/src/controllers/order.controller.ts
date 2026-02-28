@@ -26,6 +26,25 @@ export const getOrder = async (req: Request, res: Response) => {
         });
     }
 };
+export const getOrders = async (req: Request, res: Response) => {
+    try {
+        const orders = await OrderService.getAllOrders();
+
+        if (!orders) {
+            return res.status(404).json({ message: "Orders not found" });
+        }
+
+        return res.status(200).json({
+            payload: { orders },
+            message: "Order found",
+        });
+    } catch (err: any) {
+        return res.status(500).json({
+            message: "Failed to fetch order",
+            error: err.message,
+        });
+    }
+};
 
 export const createOrder = async (req: Request, res: Response) => {
     try {
@@ -50,6 +69,9 @@ export const createOrder = async (req: Request, res: Response) => {
     } catch (err: any) {
         if (err.message === "OUT_OF_STOCK") {
             return res.status(409).json({ message: "Out of stock" });
+        }
+        if (err.code === 'P2002') {
+            return res.status(409).json({ message: "You have already made one order" });
         }
         console.log(err);
         return res.status(500).json({

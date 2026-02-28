@@ -6,7 +6,7 @@ type UserId = string;
 type OrderId = string;
 type Status = "PENDING" | "STOCK VERIFIED" | "IN KITCHEN" | "READY";
 
-class NotificationService {
+export class NotificationService {
 
     private sessions: Map<UserId, Set<Session>> = new Map();
     private userOrders: Map<UserId, Set<OrderId>> = new Map();
@@ -32,7 +32,34 @@ class NotificationService {
             console.log("User ID", key, ", Connections", val.size);
         })
 
+        await this.replayUserState(userId, session);
+
         return session;
+    }
+
+
+    private async replayUserState(userId: UserId, session: Session) {
+        const orderIds = await redis.sMembers(
+            `user:orders:${userId}`
+        ) as string[];
+
+        if (!orderIds?.length) return;
+
+        for (const orderId of orderIds) {
+            const statusString = await redis.get(
+                `order:status:${orderId}`
+            ) as string;
+
+            if (!statusString) continue;
+
+            const payload = JSON.parse(statusString);
+
+            try {
+                session.push(payload, "order-status");
+            } catch (err) {
+                console.error("Replay push failed:", err);
+            }
+        }
     }
 
     /* ===============================
@@ -79,8 +106,23 @@ class NotificationService {
             return false;
         }
 
-        for (const session of userSessions) {
-            session.push(payload, event);
+        for (const session of [...userSessions]) {
+            try {
+                if (!session.isConnected) {
+                    userSessions.delete(session);
+                    continue;
+                }
+
+                session.push(payload, event);
+
+            } catch (err) {
+                console.error("SSE push failed:", err);
+                userSessions.delete(session);
+            }
+        }
+
+        if (userSessions.size === 0) {
+            this.sessions.delete(userId);
         }
 
         return true;
@@ -100,11 +142,16 @@ class NotificationService {
             status,
             timestamp: Date.now(),
         };
-
+        // ✅ Persist latest status
+        await redis.set(
+            `order:status:${orderId}`,
+            JSON.stringify(payload)
+        );
         this.push(userId, "order-status", payload);
 
         if (status === "READY") {
             await this.removeOrder(orderId);
+            await redis.del(`order:status:${orderId}`);
         }
     }
 

@@ -4,12 +4,12 @@ import prisma from "../utils/prisma.js";
 import { encodeJwt } from "../utils/jwt.js";
 
 export const loginUser = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
-    console.log("Here from login User", req.body);
+    const { studentId, password } = req.body;
+    // console.log("Here from login User", req.body);
     try {
-        if (email && password) {
+        if (studentId && password) {
             const response = await prisma.user.findUnique({
-                where: { email: email }
+                where: { institution_id: studentId }
             })
             if (!response) return res.status(404).json({ message: "You must register first" });
             if (response?.password) {
@@ -19,9 +19,8 @@ export const loginUser = async (req: Request, res: Response) => {
                 else {
                     const token = encodeJwt(response.id);
                     const user = {
+                        studentId,
                         email: response.email,
-                        first_name: response.name,
-                        last_name: response.institution_id
                     }
                     return res.status(200).json({ payload: { user, token }, message: "User Logged in" });
                 }
@@ -37,10 +36,10 @@ export const loginUser = async (req: Request, res: Response) => {
 }
 
 export const registerUser = async (req: Request, res: Response) => {
-    const { name, email, password, confirmPassword } = req.body;
+    const { name, studentId, email, password, confirmPassword } = req.body;
     console.log("Here at Register User", req.body);
     try {
-        if (!email || password !== confirmPassword) {
+        if (!email || password !== confirmPassword || !studentId) {
             return res.status(400).json({ message: "Bad Request: Invalid email or password" });
         }
 
@@ -49,20 +48,24 @@ export const registerUser = async (req: Request, res: Response) => {
 
         const hashedPassword = await argon.hash(password);
         const createdUser = await prisma.user.create({
-            data: { name, email, password: hashedPassword }
+            data: { name, email, password: hashedPassword, institution_id: studentId }
         });
 
         return res.status(201).json({
             message: "User registered successfully",
-            next_step: "Verify Email",
             user: { email }
         });
 
     } catch (error: any) {
+
+        // Handle Unique key violation for same user register......
         console.error(error);
         return res.status(500).json({ message: "Something went wrong while registering user: " + error.message });
     }
 };
+
+
+
 
 export const getStatus = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Identity Service is up and running" });

@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { createProxyMiddleware } from "http-proxy-middleware";
-import { userGuard } from './middlewares/auth.middleware.js';
+import { adminGuard, userGuard } from './middlewares/auth.middleware.js';
 import { connectRedis } from './utils/redis.js';
 import { stockGuard } from './middlewares/stock.middleware.js';
 
@@ -35,19 +35,20 @@ app.use(
     })
 );
 app.use(
-    "/api/inventory",
+    "/api/inventory/order",
     userGuard,
     stockGuard,
     createProxyMiddleware({
         target: process.env.INVENTORY_SERVICE_URL || "http://dev-sprint-inventory:4003",
         changeOrigin: true,
-        pathRewrite: {
-            "^/api/inventory": ""
+        pathRewrite: function (path, req) {
+            const fullPath = req.originalUrl;
+            return fullPath.replace('/api/inventory/order', '/order');
         },
         on: {
             proxyReq: (proxyReq, req) => {
-                if (req.headers.userId) {
-                    proxyReq.setHeader("user_id", req.headers.userId);
+                if (req.headers.user_id) {
+                    proxyReq.setHeader("user_id", req.headers.user_id);
                 }
             },
         }
@@ -55,13 +56,37 @@ app.use(
     })
 );
 app.use(
-    "/api/notifications",
+    "/api/inventory/stock",
+    // adminGuard,
+    userGuard,
+    createProxyMiddleware({
+        target: process.env.INVENTORY_SERVICE_URL || "http://dev-sprint-inventory:4003",
+        changeOrigin: true,
+        pathRewrite: function (path, req) {
+            const fullPath = req.originalUrl;
+            return fullPath.replace('/api/inventory/stock', '/stock');
+        },
+        on: {
+            proxyReq: (proxyReq, req) => {
+                if (req.headers.user_id) {
+                    proxyReq.setHeader("user_id", req.headers.user_id);
+                }
+                if (req.headers.admin_id) {
+                    proxyReq.setHeader("admin_id", req.headers.admin_id);
+                }
+            },
+        }
+
+    })
+);
+app.use(
+    "/api/notification",
     userGuard,
     createProxyMiddleware({
         target: process.env.NOTIFICATION_SERVICE_URL || "http://dev-sprint-notification:4005",
         changeOrigin: true,
         pathRewrite: {
-            "^/api/notifications": ""
+            "^/api/notification": ""
         },
         on: {
             proxyReq: (proxyReq, req) => {

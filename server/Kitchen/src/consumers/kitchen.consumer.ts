@@ -15,21 +15,19 @@ export const KitchenConsumer = async () => {
 
         const job = await KitchenService.createJob(userId, orderId);
         const randomTime = Math.random() * 5000 + 2000;// simulate 5-7s prep
-        setTimeout(() => {
-            (async () => {
-                try {
-                    await KitchenService.markCompleted(job.id);
-                    console.log("Job completed:", job.id, " in time(sec):", Math.floor(randomTime / 1000));
-                } catch (err: any) {
-                    console.error("ERROR IN markCompleted:", err);
+        setTimeout(async () => {
+            try {
+                await KitchenService.markCompleted(job.id);
+                console.log("Job completed:", job.id, " in time(sec):", Math.floor(randomTime / 1000));
+            } catch (err: any) {
+                console.error("ERROR IN markCompleted:", err);
 
-                    try {
-                        await KitchenService.markFailed(job.id, err?.message || "UNKNOWN_ERROR");
-                    } catch (failErr) {
-                        console.error("ERROR IN markFailed:", failErr);
-                    }
+                try {
+                    await KitchenService.markFailed(job.id, err?.message || "UNKNOWN_ERROR");
+                } catch (failErr) {
+                    console.error("ERROR IN markFailed:", failErr);
                 }
-            })();
+            }
         }, randomTime);
     });
 };
