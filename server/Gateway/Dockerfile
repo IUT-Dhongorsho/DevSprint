@@ -7,6 +7,8 @@ RUN npm install
 
 COPY . .
 
+RUN npm run build
+
 EXPOSE 4001
 
-CMD ["npm", "run", "dev"]
+CMD ["node", "dist/src/index.js"]

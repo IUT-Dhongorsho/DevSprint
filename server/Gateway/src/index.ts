@@ -1,12 +1,13 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { adminGuard, userGuard } from './middlewares/auth.middleware.js';
 import { connectRedis } from './utils/redis.js';
 import { stockGuard } from './middlewares/stock.middleware.js';
 
-dotenv.config();
+
 
 const app = express();
 const PORT = process.env.PORT || 8001;
