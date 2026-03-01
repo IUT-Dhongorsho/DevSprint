@@ -97,6 +97,37 @@ export class OrderService {
 
         return updated;
     }
+    static async markCancelled(orderId: string, reason?: string) {
+        // After cancel from kitchen from user:
+        const order = await prisma.order.findUnique({
+            where: { id: orderId },
+        });
+
+        if (!order) {
+            throw new Error("ORDER_NOT_FOUND");
+        }
+
+        // Stock: RESERVED -> AVAILABLE
+        await StockService.releaseStock(order.stock_id);
+
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: { status: "FAILED" },
+            select: {
+                user_id: true
+            }
+        });
+
+        await mq.publish("order.cancelled", {
+            userId: updated.user_id,
+            orderId,
+            reason: reason || null,
+        });
+
+        return updated;
+    }
+
+
 
     static async markCompleted(orderId: string) {
 

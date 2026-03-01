@@ -23,4 +23,11 @@ export const NotificationConsumer = async () => {
         notificationService.registerOrder(msg.userId, msg.orderId);
         notificationService.pushOrderStatus(msg.userId, msg.orderId, 'READY');
     });
+    await mq.subscribe("inventory.order.cancelled", "order.cancelled", async (msg) => {
+        console.log("Order Cancelled", msg);
+        if (!msg) return;
+        const { orderId, userId } = msg;
+        notificationService.removeOrder(msg.orderId);
+        notificationService.pushOrderStatus(msg.userId, msg.orderId, 'CANCELLED')
+    })
 }

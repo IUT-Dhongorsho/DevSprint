@@ -131,8 +131,55 @@ services:
       - "5005:4005"
     restart: always
 
+  # Monitoring Stack
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: dev-sprint-prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: always
+    networks:
+      - sprint-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: dev-sprint-grafana
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: dhongorsho123
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    restart: always
+    networks:
+      - sprint-network
+
+  # chaos-mesh:
+  #   image: ghcr.io/chaos-mesh/chaos-mesh:latest
+  #   container_name: dev-sprint-chaos
+  #   ports:
+  #     - "2333:2333"
+  #   restart: always
+  #   networks:
+  #     - sprint-network
+
 
 volumes:
   user-db-data:
   redis-data:
   rabbitmq_data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  sprint-network:
+    driver: bridge

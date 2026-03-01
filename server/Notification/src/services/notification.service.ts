@@ -4,7 +4,7 @@ import { redis } from "../utils/redis.js";
 
 type UserId = string;
 type OrderId = string;
-type Status = "PENDING" | "STOCK VERIFIED" | "IN KITCHEN" | "READY";
+type Status = "PENDING" | "STOCK VERIFIED" | "IN KITCHEN" | "READY" | "CANCELLED" | "FAILED";
 
 export class NotificationService {
 
@@ -74,7 +74,7 @@ export class NotificationService {
         this.userOrders.set(userId, orders);
 
         // Redis
-        await redis.sAdd(`user:orders:${userId}`, orderId);
+        await redis.sAdd(`user:orders:${userId}`, orderId,);
         await redis.set(`order:user:${orderId}`, userId);
     }
 

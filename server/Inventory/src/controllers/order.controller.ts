@@ -107,6 +107,8 @@ export const createOrder = async (req: Request, res: Response) => {
 // };
 
 
+
+
 export const deleteOrder = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -116,6 +118,27 @@ export const deleteOrder = async (req: Request, res: Response) => {
         }
 
         const deleted = await OrderService.deleteOrder(id);
+
+        return res.status(200).json({
+            payload: { order: deleted },
+            message: "Order deleted successfully",
+        });
+    } catch (err: any) {
+        return res.status(500).json({
+            message: "Failed to delete order",
+            error: err.message,
+        });
+    }
+};
+export const cancelOrder = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        if (!id || typeof id !== 'string') {
+            return res.status(400).json({ message: "Missing order id" });
+        }
+
+        const deleted = await OrderService.markCancelled(id);
 
         return res.status(200).json({
             payload: { order: deleted },

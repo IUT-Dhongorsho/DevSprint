@@ -4,7 +4,7 @@ import { KitchenService } from "../services/kitchen.service.js";
 
 
 export const KitchenConsumer = async () => {
-    console.log("From Inventory Consumer");
+    console.log("From Kitchen Consumer");
     await mq.subscribe("inventory.order.queue", "order.created", async (msg) => {
         console.log("Trigger from order created", msg);
         if (!msg) return;
@@ -30,4 +30,17 @@ export const KitchenConsumer = async () => {
             }
         }, randomTime);
     });
+    await mq.subscribe("inventory.order.cancelled", "order.cancelled", async (msg) => {
+        console.log("Trigger from order created", msg);
+        if (!msg) return;
+
+        const { orderId, userId } = msg;
+        console.log("Order cancel request received in Kitchen:", orderId);
+        const job = await KitchenService.getJobByOrderId(orderId);
+        try {
+            await KitchenService.markFailed(job.id, "CANCELLED");
+        } catch (failErr) {
+            console.error("ERROR IN markFailed:", failErr);
+        }
+    })
 };

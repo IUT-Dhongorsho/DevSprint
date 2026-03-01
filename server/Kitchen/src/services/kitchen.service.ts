@@ -16,6 +16,12 @@ export class KitchenService {
         redis.set(`job:${job.id}`, JSON.stringify(job));
         return job;
     }
+    static async getJobByOrderId(orderId: string) {
+        const job = await prisma.job.findUnique({
+            where: { orderId: orderId }
+        })
+        return job
+    };
     static async rejectJob(jobId: string) {
         const job = await prisma.job.update({
             where: { id: jobId },
