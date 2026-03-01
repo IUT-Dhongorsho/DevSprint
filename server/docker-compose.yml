@@ -172,6 +172,7 @@ services:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: dhongorsho123
       GF_SERVER_ENABLE_GZIP: "true"
+      GF_DEFAULT_ORG_ID: 1  
       GF_SECURITY_ALLOW_EMBEDDING: "true"  # This allows embedding
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_INSTALL_PLUGINS: grafana-piechart-panel
@@ -179,7 +180,7 @@ services:
       - "3000:3000"
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./Grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./Grafana/provisioning:/etc/grafana/provisioning  # Mount the whole folder
       - ./Grafana/datasources:/etc/grafana/provisioning/datasources
     restart: always
     networks:
