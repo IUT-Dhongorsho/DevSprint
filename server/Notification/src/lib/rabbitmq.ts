@@ -3,9 +3,9 @@ import amqp, { Channel, ConsumeMessage, Connection, ChannelModel } from "amqplib
 type MessageHandler = (data: any) => Promise<void>;
 
 export class RabbitMQ {
-    private connection: ChannelModel | null = null;
+    public connection: ChannelModel | null = null;
     private channel: Channel | null = null;
-    private readonly url: string;
+    public readonly url: string;
     private readonly exchange: string;
 
     constructor(url: string, exchange: string) {

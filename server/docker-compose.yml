@@ -13,6 +13,8 @@ services:
       - user-db-data:/var/lib/postgresql/data
       - ./Database:/docker-entrypoint-initdb.d
     # profiles: ["dev"]
+    networks:
+      - sprint-network 
 
 # Caching Service:
   dev-sprint-redis:
@@ -24,6 +26,8 @@ services:
     volumes:
       - redis-data:/data
     # profiles: ["dev"]
+    networks:
+      - sprint-network 
 
 # RabbitMQ Service:
   rabbitmq:
@@ -39,6 +43,8 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
     restart: always
     # profiles: ["dev"]
+    networks:
+      - sprint-network 
 
 # Gateway Service:
   gateway:
@@ -53,10 +59,13 @@ services:
       JWT_SECRET: "dhongorsho"
       IDENTITY_SERVICE_URL: "http://dev-sprint-identity:4002"
       INVENTORY_SERVICE_URL: "http://dev-sprint-inventory:4003"
+      KITCHEN_SERVICE_URL: "http://dev-sprint-kitchen:4004"
       NOTIFICATION_SERVICE_URL: "http://dev-sprint-notification:4005" 
     ports:
       - "5001:4001"
     restart: always
+    networks:
+      - sprint-network 
 
 
 # Idnetity Service:
@@ -74,6 +83,8 @@ services:
     ports:
       - "5002:4002"
     restart: always
+    networks:
+      - sprint-network 
 
 
 # Inventory Service:
@@ -93,6 +104,8 @@ services:
     ports:
       - "5003:4003"
     restart: always
+    networks:
+      - sprint-network 
 
 
 # Ktichen Service:
@@ -112,6 +125,9 @@ services:
     ports:
       - "5004:4004"
     restart: always
+    networks:
+      - sprint-network 
+
 
 
 # Notification Service:
@@ -130,19 +146,22 @@ services:
     ports:
       - "5005:4005"
     restart: always
+    networks:
+      - sprint-network 
 
   # Monitoring Stack
   prometheus:
     image: prom/prometheus:latest
     container_name: dev-sprint-prometheus
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./Prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
     ports:
       - "9090:9090"
     restart: always
     networks:
       - sprint-network
+    # profiles: ["dev"]
 
   grafana:
     image: grafana/grafana:latest
@@ -152,16 +171,34 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: dhongorsho123
+      GF_SERVER_ENABLE_GZIP: "true"
+      GF_SECURITY_ALLOW_EMBEDDING: "true"  # This allows embedding
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_INSTALL_PLUGINS: grafana-piechart-panel
     ports:
       - "3000:3000"
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./Grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./Grafana/datasources:/etc/grafana/provisioning/datasources
     restart: always
     networks:
       - sprint-network
+    # profiles: ["dev"]
+
+
+
+  dev-sprint-k6:
+    image: grafana/k6:latest
+    container_name: dev-sprint-k6
+    volumes:
+      - ./Tests/All/load-test.js:/scripts/load-test.js  # Mount your test script
+    # command: run /scripts/load-test.js
+    networks:
+      - sprint-network
+    # profiles: ["loadtest"]
+
+
 
   # chaos-mesh:
   #   image: ghcr.io/chaos-mesh/chaos-mesh:latest

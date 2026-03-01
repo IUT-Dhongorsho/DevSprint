@@ -8,8 +8,8 @@
 ## Identity Service
 
 ### Authentication
-- **POST** `/api/identity/auth/register` — Register a new user
-- **POST** `/api/identity/auth/login` — Login user
+- **POST** `/api/identity/auth/register` — Register a new user. Body {email, password, confirmPassword, studentId, name}
+- **POST** `/api/identity/auth/login` — Login user Body {studentId, password}
 - **GET** `/api/identity/auth/` — Check service status
 
 ### User
@@ -27,7 +27,7 @@
 ## Inventory Service
 
 ### Orders
-- **POST** `/api/inventory/order/` — Create a new order
+- **POST** `/api/inventory/order/` — Create a new order {userId: req.headers.user_id (handled automatically)}
 - **GET** `/api/inventory/order/:id` — Get order details by order ID
 - **DELETE** `/api/inventory/order/:id` — Delete order by order ID
 
@@ -35,8 +35,9 @@
 - **GET** `/api/inventory/stock/` — Get stock quantities (all stocks)
 - **GET** `/api/inventory/stock/:id` — Get stock details by stock ID
 - **GET** `/api/inventory/stock/date/:forDate` — Get stocks for a specific date (`YYYY-MM-DD`)
-- **POST** `/api/inventory/stock/` — Create stock entries
+- **POST** `/api/inventory/stock/` — Create stock entries Body{quantity:number, forDate:YYYY-MM-DD}
 - **DELETE** `/api/inventory/stock/:id` — Delete stock by ID
+- **DELETE** `/api/inventory/stock/date:forDate` — Delete stock by date
 
 ---
 
