@@ -47,4 +47,4 @@ jobs:
       - name: Build images
         run: |
           cd server
-          docker-compose build --no-cache
+          docker compose up --build
