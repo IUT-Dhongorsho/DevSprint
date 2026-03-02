@@ -34,8 +34,8 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci
-      - run: npm run build 2>/dev/null || true
-      - run: npm test 2>/dev/null || true
+      - run: npm run build
+      - run: npm test
 
   docker-build:
     needs: [frontend, server]
@@ -47,4 +47,4 @@ jobs:
       - name: Build images
         run: |
           cd server
-          docker compose build
+          docker compose build --no-cache
