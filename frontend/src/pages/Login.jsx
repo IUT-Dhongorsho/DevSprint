@@ -23,7 +23,7 @@ const Login = () => {
     try {
       // Points to Identity Provider (via Gateway)
       const response = await api.post(
-        "http://localhost:5001/api/identity/auth/login",
+        "http://localhost:8005/api/identity/auth/login",
         { studentId, password },
       );
 

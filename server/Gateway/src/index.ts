@@ -42,20 +42,20 @@ app.use(metricsMiddleware);
 
 
 
-// let isKilled = false;
+let isKilled = false;
 
-// app.post('/chaos/kill', (req, res) => {
-//     isKilled = !isKilled;
-//     return res.status(200).json({ message: "Successfully switched Service" });
-// })
+app.post('/chaos/kill', (req, res) => {
+    isKilled = !isKilled;
+    return res.status(200).json({ message: "Successfully switched Service" });
+})
 
-// app.use((req, res, next) => {
-//     if (isKilled) {
-//         return res.status(503).json({ message: "Service killed." })
-//     } else {
-//         return next()
-//     }
-// })
+app.use((req, res, next) => {
+    if (isKilled) {
+        return res.status(503).json({ message: "Service killed." })
+    } else {
+        return next()
+    }
+})
 
 // Logger Middleware:
 app.use((req, res, next) => {
