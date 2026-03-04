@@ -15,7 +15,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setToken } = useAuth();
-  const api_url = import.meta.env.API_URL|| "http://localhost:5001";
+  const api_url = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -24,10 +24,10 @@ const Login = () => {
 
     try {
       // Points to Identity Provider (via Gateway)
-      const response = await api.post(
-        `${api_url}/api/identity/auth/login`,
-        { studentId, password },
-      );
+      const response = await api.post(`${api_url}/api/identity/auth/login`, {
+        studentId,
+        password,
+      });
 
       // Store token for the Bearer handshake
       const newToken = response.data?.payload?.token;

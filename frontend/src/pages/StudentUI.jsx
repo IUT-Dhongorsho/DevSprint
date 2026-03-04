@@ -10,20 +10,18 @@ const StudentUI = () => {
   const [orderStatus, setOrderStatus] = useState(null); // 'pending', 'verified', 'kitchen', 'ready'
   const [loading, setLoading] = useState(false);
   // const [stockStatus, setStockStatus] = useState(null);
-  const api_url = import.meta.env.API_URL|| "http://localhost:5001";
+  const api_url = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
   useEffect(() => {
     const handlePastOrders = async () => {
       try {
-        const response = await api.get(
-          `${api_url}/api/inventory/order/user`,
-        );
+        const response = await api.get(`${api_url}/api/inventory/order/user`);
         if (response.data?.payload?.orders) {
           console.log(response.data.payload.orders);
         }
       } catch (error) {
         console.log(error);
-        alert(error.message);
+        // alert(error.message);
       }
     };
     handlePastOrders();
@@ -66,11 +64,11 @@ const StudentUI = () => {
     setLoading(true);
     try {
       // 1. Gateway performs Token Validation & Cache Check
-      const response = await api.post(
-        `${api_url}/api/inventory/order`,
-      );
-      if (response.data?.payload?.order.status)
+      const response = await api.post(`${api_url}/api/inventory/order`);
+      if (response.data?.payload?.order.status) {
         setOrderStatus(response.data.payload.order.status);
+        alert(response.data.message);
+      }
     } catch (err) {
       alert(err.response?.data?.message || "Order Failed");
     } finally {

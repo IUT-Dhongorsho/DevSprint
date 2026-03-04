@@ -1,14 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Zap, ShieldAlert, BarChart3, Globe, Flame, Bomb, X, PackagePlus, CheckCircle2 } from "lucide-react";
+import {
+  Activity,
+  Zap,
+  ShieldAlert,
+  BarChart3,
+  Globe,
+  Flame,
+  Bomb,
+  X,
+  PackagePlus,
+  CheckCircle2,
+} from "lucide-react";
 import api from "../services/api";
 import PageWrapper from "../components/common/PageWrapper";
 
-
 const AdminUI = () => {
-  const [modalStep, setModalStep] = useState(1); 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const api_url = import.meta.env.API_URL || "http://localhost:5001";
+  const [modalStep, setModalStep] = useState(1);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+  const api_url = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
   const [isChaosEnabled, setIsChaosEnabled] = useState(false);
   // Modal States
@@ -17,11 +29,36 @@ const AdminUI = () => {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const [services, setServices] = useState([
-    { name: "Gateway Service", endpoint: "http://localhost:5001/health", status: "loading", port: 5001 },
-    { name: "Identity Provider", endpoint: "http://localhost:5001/api/identity/health", status: "loading", port: 5002 },
-    { name: "Inventory Service", endpoint: "http://localhost:5001/api/inventory/health", status: "loading", port: 5003 },
-    { name: "Kitchen Service", endpoint: "http://localhost:5001/api/kitchen/health", status: "loading", port: 5004 },
-    { name: "Notification Hub", endpoint: "http://localhost:5001/api/notification/health", status: "loading", port: 5005 },
+    {
+      name: "Gateway Service",
+      endpoint: "http://localhost:5001/health",
+      status: "loading",
+      port: 5001,
+    },
+    {
+      name: "Identity Provider",
+      endpoint: "http://localhost:5001/api/identity/health",
+      status: "loading",
+      port: 5002,
+    },
+    {
+      name: "Inventory Service",
+      endpoint: "http://localhost:5001/api/inventory/health",
+      status: "loading",
+      port: 5003,
+    },
+    {
+      name: "Kitchen Service",
+      endpoint: "http://localhost:5001/api/kitchen/health",
+      status: "loading",
+      port: 5004,
+    },
+    {
+      name: "Notification Hub",
+      endpoint: "http://localhost:5001/api/notification/health",
+      status: "loading",
+      port: 5005,
+    },
   ]);
 
   const toggleChaosMode = () => {
@@ -63,18 +100,18 @@ const AdminUI = () => {
   const handleStockSubmit = async (e) => {
     e.preventDefault();
     if (!stockAmount || !selectedDate) return;
-    
+
     // Final Data Payload
     const payload = {
       quantity: parseInt(stockAmount),
-      forDate: selectedDate
+      forDate: selectedDate,
     };
-    
+
     console.log("Submitting Stock Data:", payload);
     setShowSuccess(true);
-    const res = await api.post(`${api_url}/api/inventory/stock`,  {
+    const res = await api.post(`${api_url}/api/inventory/stock`, {
       quantity: payload.quantity,
-      forDate: payload.forDate
+      forDate: payload.forDate,
     });
     console.log(res);
 
@@ -89,19 +126,24 @@ const AdminUI = () => {
   return (
     <PageWrapper>
       <div className="space-y-8 px-10 relative">
-        
         {/* --- STOCK INCREMENT DIALOG (MODAL) --- */}
         <AnimatePresence>
           {isStockModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <motion.div 
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                onClick={() => { setIsStockModalOpen(false); setModalStep(1); }}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => {
+                  setIsStockModalOpen(false);
+                  setModalStep(1);
+                }}
                 className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
               />
-              
-              <motion.div 
-                initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
                 className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative z-10 border border-slate-100"
               >
@@ -110,32 +152,49 @@ const AdminUI = () => {
                     <PackagePlus size={18} className="text-indigo-600" />
                     Stock Increment {modalStep === 2 && " - Select Date"}
                   </h3>
-                  <button onClick={() => { setIsStockModalOpen(false); setModalStep(1); }} className="p-2 text-slate-400 hover:text-slate-600">
+                  <button
+                    onClick={() => {
+                      setIsStockModalOpen(false);
+                      setModalStep(1);
+                    }}
+                    className="p-2 text-slate-400 hover:text-slate-600"
+                  >
                     <X size={20} />
                   </button>
                 </div>
 
                 <div className="p-8">
                   {showSuccess ? (
-                    <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-4 space-y-3">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex flex-col items-center justify-center py-4 space-y-3"
+                    >
                       <CheckCircle2 size={48} className="text-green-500" />
-                      <p className="text-green-600 font-bold">Stock Updated Successfully!</p>
+                      <p className="text-green-600 font-bold">
+                        Stock Updated Successfully!
+                      </p>
                     </motion.div>
                   ) : (
                     <div className="space-y-6">
                       {modalStep === 1 ? (
                         /* STEP 1: AMOUNT */
-                        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+                        <motion.div
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                        >
                           <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
                             Increment Amount
                           </label>
-                          <input 
-                            type="number" autoFocus value={stockAmount}
+                          <input
+                            type="number"
+                            autoFocus
+                            value={stockAmount}
                             onChange={(e) => setStockAmount(e.target.value)}
                             placeholder="e.g. 50"
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-lg"
                           />
-                          <button 
+                          <button
                             onClick={() => stockAmount && setModalStep(2)}
                             className="w-full mt-6 py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all"
                           >
@@ -144,23 +203,27 @@ const AdminUI = () => {
                         </motion.div>
                       ) : (
                         /* STEP 2: CALENDAR */
-                        <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+                        <motion.div
+                          initial={{ x: 20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                        >
                           <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
                             Target Date
                           </label>
-                          <input 
-                            type="date" value={selectedDate}
+                          <input
+                            type="date"
+                            value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-lg"
                           />
                           <div className="flex gap-2 mt-6">
-                            <button 
+                            <button
                               onClick={() => setModalStep(1)}
                               className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200"
                             >
                               Back
                             </button>
-                            <button 
+                            <button
                               onClick={handleStockSubmit}
                               className="flex-[2] py-4 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-200 transition-all"
                             >
@@ -181,7 +244,7 @@ const AdminUI = () => {
         <div className="bg-slate-900 rounded-4xl p-6 shadow-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 overflow-hidden relative">
           <AnimatePresence>
             {isChaosEnabled && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -191,11 +254,15 @@ const AdminUI = () => {
           </AnimatePresence>
 
           <div className="flex items-center gap-4 z-10">
-            <div className={`p-3 rounded-2xl ${isChaosEnabled ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
-               {isChaosEnabled ? <Bomb size={24} /> : <Flame size={24} />}
+            <div
+              className={`p-3 rounded-2xl ${isChaosEnabled ? "bg-red-500 text-white" : "bg-slate-800 text-slate-400"}`}
+            >
+              {isChaosEnabled ? <Bomb size={24} /> : <Flame size={24} />}
             </div>
             <div>
-              <h2 className={`text-lg font-black tracking-tight ${isChaosEnabled ? 'text-red-500' : 'text-white'}`}>
+              <h2
+                className={`text-lg font-black tracking-tight ${isChaosEnabled ? "text-red-500" : "text-white"}`}
+              >
                 CHAOS ENGINE v1.0
               </h2>
               <p className="text-slate-400 text-xs font-mono uppercase tracking-widest">
@@ -205,7 +272,9 @@ const AdminUI = () => {
           </div>
 
           <div className="flex items-center gap-3 z-10">
-            <span className={`text-[10px] font-bold uppercase tracking-tighter ${isChaosEnabled ? 'text-slate-500' : 'text-indigo-400'}`}>
+            <span
+              className={`text-[10px] font-bold uppercase tracking-tighter ${isChaosEnabled ? "text-slate-500" : "text-indigo-400"}`}
+            >
               Safe Mode
             </span>
             <button
@@ -221,7 +290,9 @@ const AdminUI = () => {
                 animate={{ x: isChaosEnabled ? 32 : 0 }}
               />
             </button>
-            <span className={`text-[10px] font-bold uppercase tracking-tighter ${isChaosEnabled ? 'text-red-500' : 'text-slate-500'}`}>
+            <span
+              className={`text-[10px] font-bold uppercase tracking-tighter ${isChaosEnabled ? "text-red-500" : "text-slate-500"}`}
+            >
               Chaos Active
             </span>
           </div>
@@ -267,7 +338,7 @@ const AdminUI = () => {
                 >
                   Kill Service
                 </button>
-                
+
                 {/* Conditional Stock Button for Inventory Service */}
                 {service.name === "Inventory Service" && (
                   <button
@@ -285,17 +356,20 @@ const AdminUI = () => {
 
         {/* Metrics Section (Unchanged) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <h3 className="font-bold flex items-center gap-2 mb-6 text-slate-800">
-                    <BarChart3 size={18} className="text-indigo-500" />
-                    Live Latency
-                </h3>
-                <iframe
-                    src="http://localhost:3000/d-solo/ad5nwzc/iut-cafe?orgId=1&from=now-15m&to=now&refresh=5s&timezone=browser&panelId=1&__feature.dashboardSceneSolo=true" width="100%" height="400" frameBorder="0"
-                    className="w-full h-64 rounded-xl border-0"
-                    title="Grafana Metrics"
-                />
-            </div>
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <h3 className="font-bold flex items-center gap-2 mb-6 text-slate-800">
+              <BarChart3 size={18} className="text-indigo-500" />
+              Live Latency
+            </h3>
+            <iframe
+              src="http://localhost:3000/d-solo/ad5nwzc/iut-cafe?orgId=1&from=now-15m&to=now&refresh=5s&timezone=browser&panelId=1&__feature.dashboardSceneSolo=true"
+              width="100%"
+              height="400"
+              frameBorder="0"
+              className="w-full h-64 rounded-xl border-0"
+              title="Grafana Metrics"
+            />
+          </div>
 
           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
             <h3 className="font-bold flex items-center gap-2 mb-6">
@@ -303,7 +377,10 @@ const AdminUI = () => {
               Order Throughput
             </h3>
             <iframe
-              src="http://localhost:3000/d-solo/adfthmb/iut-cafeteria-oversight?orgId=1&from=now-15m&to=now&refresh=5s&timezone=browser&refresh=auto&panelId=1&__feature.dashboardSceneSolo=true" width="450" height="200" frameBorder="0"
+              src="http://localhost:3000/d-solo/adfthmb/iut-cafeteria-oversight?orgId=1&from=now-15m&to=now&refresh=5s&timezone=browser&refresh=auto&panelId=1&__feature.dashboardSceneSolo=true"
+              width="450"
+              height="200"
+              frameBorder="0"
               className="w-full h-64 rounded-xl border-0"
               title="Throughput Metrics"
             />

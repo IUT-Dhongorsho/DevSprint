@@ -17,7 +17,7 @@ const Signup = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const api_url = import.meta.env.API_URL|| "http://localhost:5001";
+  const api_url = import.meta.env.VITE_API_URL|| "http://localhost:5001";
 
 
   const handleChange = (e) => {
