@@ -1,24 +1,20 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, LayoutDashboard, Utensils } from "lucide-react"; // Added icons for flair
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 
 const Navbar = () => {
   const [loading, setLoading] = useState(false);
-  const { logout, token } = useAuth(); // Assuming your context provides the token
+  const { logout, token } = useAuth(); 
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    try {
-      setLoading(true);
+  const handleLogout = () => {
+    setLoading(true);
+    setTimeout(() => {
       logout();
       navigate("/");
-    } catch (error) {
-      console.log(error);
-      alert(error.message);
-    } finally {
       setLoading(false);
-    }
+    }, 800); // Small delay for smooth UX
   };
 
   return (
@@ -31,46 +27,50 @@ const Navbar = () => {
           IUT CAFETERIA <span className="text-slate-300">|</span> 2026
         </Link>
 
-        <div className="flex items-center gap-6 text-sm font-bold text-slate-600">
-          {/* --- LOGGED IN VIEW --- */}
+        <div className="flex items-center gap-4 text-sm font-bold text-slate-600">
+          {/* --- ALWAYS VISIBLE / PROTECTED LINKS --- */}
+          <Link
+            to="/student"
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 transition-all active:scale-95"
+          >
+            <Utensils size={16} />
+            Order
+          </Link>
+          
+          <Link
+            to="/admin"
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl hover:bg-purple-50 hover:text-purple-600 transition-all active:scale-95"
+          >
+            <LayoutDashboard size={16} />
+            Dashboard
+          </Link>
+
+          <div className="h-6 w-[1px] bg-slate-200 mx-2" /> {/* Divider */}
+
+          {/* --- AUTH CONDITIONAL VIEW --- */}
           {token ? (
-            <>
-              <Link
-                to="/student"
-                className="hover:text-indigo-600 transition-colors"
-              >
-                Order
-              </Link>
-              <Link 
-                to="/admin" 
-                className="hover:text-purple-600 transition-colors"
-              >
-                Mission Control
-              </Link>
-              <button
-                onClick={handleLogout}
-                disabled={loading}
-                className="px-4 py-2 rounded-2xl transition-all bg-red-500 text-white shadow-lg shadow-red-100 hover:scale-105 active:scale-95 flex items-center justify-center min-w-[80px]"
-              >
-                {loading ? <Loader2 className="animate-spin size-4" /> : "Logout"}
-              </button>
-            </>
+            <button
+              onClick={handleLogout}
+              disabled={loading}
+              className="px-5 py-2 rounded-2xl transition-all bg-red-500 text-white shadow-lg shadow-red-100 hover:bg-red-600 hover:scale-105 active:scale-95 flex items-center justify-center min-w-[100px]"
+            >
+              {loading ? <Loader2 className="animate-spin size-4" /> : "Logout"}
+            </button>
           ) : (
-            /* --- LOGGED OUT VIEW --- */
-            <>
+            <div className="flex items-center gap-3">
               <Link
                 to="/"
-                className="hover:text-indigo-600 transition-colors"
+                className="hover:text-indigo-600 transition-colors px-4"
               >
                 Login
               </Link>
               <Link
                 to="/signup"
-                className="px-4 py-2 rounded-2xl transition-all bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-200 hover:scale-105 active:scale-95"
+                className="px-5 py-2 rounded-2xl transition-all bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-200 hover:scale-105 active:scale-95"
               >
                 Sign Up
               </Link>
-            </>
+            </div>
           )}
         </div>
       </div>
