@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import argon from "argon2";
+// import argon from "argon2";
+import { argon } from "../utils/argon2.js";
 import prisma from "../utils/prisma.js";
 import { encodeJwt } from "../utils/jwt.js";
 

@@ -5,8 +5,6 @@ import { formatDateForDb } from "../utils/formatDate.js";
 import { OrderStatus } from "../generated/prisma/enums.js";
 
 export class OrderService {
-    // ========== QUERY METHODS ==========
-
     static async getOrderById(id: string) {
         return prisma.order.findUnique({
             where: { id },
@@ -35,32 +33,28 @@ export class OrderService {
         return !!order;
     }
 
-    // ========== MUTATION METHODS ==========
 
     static async createOrder(userId: string, forDate: string) {
         const date = formatDateForDb(forDate);
 
         // Check if user already ordered today
-        const existingOrder = await prisma.order.findFirst({
-            where: { user_id: userId, forDate: date }
+        const orderCount = await prisma.order.count({
+            where: {
+                user_id: userId
+            }
         });
 
-        if (existingOrder) {
-            throw { code: 'P2002', message: 'Already ordered today' };
+        if (orderCount > 5) {
+            throw { code: 'P2002', message: 'Already ordered 5 times today' };
         }
 
-        // Check stock availability via cache (fast fail)
         const availableCount = await StockService.getAvailableCount(date);
         if (availableCount === 0) {
             throw new Error("OUT_OF_STOCK");
         }
 
-        // Reserve stock and create order in a transaction
         const order = await prisma.$transaction(async (tx) => {
-            // Reserve stock
             const stockId = await StockService.reserveStock(date);
-
-            // Create order
             const newOrder = await tx.order.create({
                 data: {
                     user_id: userId,

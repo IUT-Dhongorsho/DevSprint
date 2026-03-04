@@ -1,8 +1,8 @@
 services:
 # Database Service:
-  dev-sprint-postgres:
+  dev-sprint-postgres-user:
     image: postgres:16-alpine
-    container_name: dev-sprint-postgres
+    container_name: dev-sprint-postgres-user
     environment:
       POSTGRES_USER: dhongorsho
       POSTGRES_PASSWORD: dhongorsho123
@@ -11,8 +11,39 @@ services:
       - "5433:5432"       # different host port to avoid conflicts
     volumes:
       - user-db-data:/var/lib/postgresql/data
-      - ./Database:/docker-entrypoint-initdb.d
-    profiles: ["dev"]
+    # profiles: ["dev"]
+    networks:
+      - sprint-network 
+
+# Database Service:
+  dev-sprint-postgres-inventory:
+    image: postgres:16-alpine
+    container_name: dev-sprint-postgres-inventory
+    environment:
+      POSTGRES_USER: dhongorsho
+      POSTGRES_PASSWORD: dhongorsho123
+      POSTGRES_DB: inventory_db
+    ports:
+      - "5434:5432"       # different host port to avoid conflicts
+    volumes:
+      - inventory-db-data:/var/lib/postgresql/data
+    # profiles: ["dev"]
+    networks:
+      - sprint-network 
+
+# Database Service:
+  dev-sprint-postgres-kitchen:
+    image: postgres:16-alpine
+    container_name: dev-sprint-postgres-kitchen
+    environment:
+      POSTGRES_USER: dhongorsho
+      POSTGRES_PASSWORD: dhongorsho123
+      POSTGRES_DB: kitchen_db
+    ports:
+      - "5435:5432"       # different host port to avoid conflicts
+    volumes:
+      - kitchen-db-data:/var/lib/postgresql/data
+    # profiles: ["dev"]
     networks:
       - sprint-network 
 
@@ -26,13 +57,13 @@ services:
     command: ["redis-server", "--save", "60", "1", "--appendonly", "yes"]
     volumes:
       - redis-data:/data
-    profiles: ["dev"]
+    # profiles: ["dev"]
     networks:
       - sprint-network 
 
 # RabbitMQ Service:
   rabbitmq:
-    image: rabbitmq:4-alpine
+    image: rabbitmq:4-management
     container_name: rabbitmq_service
     ports:
       - "5672:5672"   # AMQP protocol port
@@ -43,7 +74,7 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     restart: always
-    profiles: ["dev"]
+    # profiles: ["dev"]
     networks:
       - sprint-network 
 
@@ -52,7 +83,7 @@ services:
     build: ./Gateway
     container_name: dev-sprint-gateway
     depends_on:
-      - dev-sprint-postgres
+      - dev-sprint-postgres-user
       - dev-sprint-redis
     environment:
       REDIS_URL: "redis://dev-sprint-redis:6379"
@@ -74,10 +105,10 @@ services:
     build: ./Identity
     container_name: dev-sprint-identity
     depends_on:
-      - dev-sprint-postgres
+      - dev-sprint-postgres-user
       - dev-sprint-redis
     environment:
-      DATABASE_URL: "postgresql://dhongorsho:dhongorsho123@dev-sprint-postgres:5432/user_db?schema=public"
+      DATABASE_URL: "postgresql://dhongorsho:dhongorsho123@dev-sprint-postgres-user:5432/user_db?schema=public"
       REDIS_URL: "redis://dev-sprint-redis:6379"
       PORT: 4002
       JWT_SECRET: "dhongorsho"
@@ -93,11 +124,11 @@ services:
     build: ./Inventory
     container_name: dev-sprint-inventory
     depends_on:
-      - dev-sprint-postgres
+      - dev-sprint-postgres-inventory
       - dev-sprint-redis
       - rabbitmq
     environment:
-      DATABASE_URL: "postgresql://dhongorsho:dhongorsho123@dev-sprint-postgres:5432/inventory_db?schema=public"
+      DATABASE_URL: "postgresql://dhongorsho:dhongorsho123@dev-sprint-postgres-inventory:5432/inventory_db?schema=public"
       REDIS_URL: "redis://dev-sprint-redis:6379"
       PORT: 4003
       RABBITMQ_URL: "amqp://IUT_Dhongorsho:Dhongorsho123@rabbitmq:5672"  
@@ -114,11 +145,11 @@ services:
     build: ./Kitchen
     container_name: dev-sprint-kitchen
     depends_on:
-      - dev-sprint-postgres
+      - dev-sprint-postgres-kitchen
       - dev-sprint-redis
       - rabbitmq
     environment:
-      DATABASE_URL: "postgresql://dhongorsho:dhongorsho123@dev-sprint-postgres:5432/kitchen_db?schema=public"
+      DATABASE_URL: "postgresql://dhongorsho:dhongorsho123@dev-sprint-postgres-kitchen:5432/kitchen_db?schema=public"
       REDIS_URL: "redis://dev-sprint-redis:6379"
       PORT: 4004
       RABBITMQ_URL: "amqp://IUT_Dhongorsho:Dhongorsho123@rabbitmq:5672"  
@@ -136,7 +167,6 @@ services:
     build: ./Notification
     container_name: dev-sprint-notification
     depends_on:
-      - dev-sprint-postgres
       - dev-sprint-redis
       - rabbitmq
     environment:
@@ -162,7 +192,7 @@ services:
     restart: always
     networks:
       - sprint-network
-    profiles: ["dev"]
+    # profiles: ["dev"]
 
   grafana:
     image: grafana/grafana:latest
@@ -187,7 +217,7 @@ services:
     restart: always
     networks:
       - sprint-network
-    profiles: ["dev"]
+    # profiles: ["dev"]
 
 
 
@@ -215,6 +245,8 @@ services:
 
 volumes:
   user-db-data:
+  inventory-db-data:
+  kitchen-db-data:
   redis-data:
   rabbitmq_data:
   prometheus-data:

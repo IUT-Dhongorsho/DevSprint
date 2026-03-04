@@ -1,94 +1,87 @@
-import * as workerpool from 'workerpool';
+import workerpool from 'workerpool';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Create a worker pool
-const pool = workerpool.pool({
-    minWorkers: 2,
-    maxWorkers: 4,
-    workerType: 'thread'
-});
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Define worker functions that import dependencies INSIDE with error handling
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-    try {
-        // Import argon2 INSIDE the function (worker context)
-        const argon2Module = await import('argon2');
-        const argon2 = argon2Module.default;
-        return await argon2.verify(hash, password);
-    } catch (error) {
-        console.error('Argon2 verification error:', error);
-        return false;
-    }
-}
+class Argon2Pool {
+    private pool: workerpool.Pool;
+    private healthy: boolean = true;
 
-async function hashPassword(password: string): Promise<string> {
-    try {
-        // Import argon2 INSIDE the function (worker context)
-        const argon2Module = await import('argon2');
-        const argon2 = argon2Module.default;
-        return await argon2.hash(password, {
-            type: argon2.argon2id,
-            memoryCost: 19456,  // 19 MB - OWASP recommended
-            timeCost: 2,         // 2 iterations
-            parallelism: 1
-        });
-    } catch (error) {
-        console.error('Argon2 hashing error:', error);
-        throw new Error(`Password hashing failed: ${error.message}`);
-    }
-}
-
-// Export wrapper functions
-export const argon2Worker = {
-    /**
-     * Verify password against hash using worker thread
-     */
-    async verify(password: string, hash: string): Promise<boolean> {
-        try {
-            return await pool.exec(verifyPassword, [password, hash]);
-        } catch (error) {
-            console.error('Worker pool execution error:', error);
-            // Fallback to direct execution if worker fails
-            try {
-                const argon2Module = await import('argon2');
-                const argon2 = argon2Module.default;
-                return await argon2.verify(hash, password);
-            } catch (fallbackError) {
-                console.error('Fallback verification failed:', fallbackError);
-                return false;
+    constructor() {
+        // Create worker pool with 4 workers
+        this.pool = workerpool.pool(
+            path.join(__dirname, '../workers/argon2.worker.js'),
+            {
+                minWorkers: 2,
+                maxWorkers: 4,
+                workerType: 'thread',
+                // Handle worker crashes
+                onCreateWorker: () => { console.log('✅ Worker created'); return undefined; },
+                onTerminateWorker: () => { console.log('Worker terminated'); return undefined; }
             }
-        }
-    },
+        );
 
-    /**
-     * Hash password using worker thread
-     */
+        // Monitor pool health
+        this.monitorHealth();
+    }
+
+    private monitorHealth() {
+        setInterval(() => {
+            const stats = this.pool.stats();
+            if (stats.pendingTasks > 10) {
+                console.warn(`⚠️ Worker pool backlog: ${stats.pendingTasks} tasks`);
+            }
+            if (stats.activeTasks === stats.totalWorkers) {
+                console.warn('⚠️ Worker pool at capacity');
+            }
+        }, 5000);
+    }
+
     async hash(password: string): Promise<string> {
         try {
-            return await pool.exec(hashPassword, [password]);
+            return await this.pool.exec('hashPassword', [password]);
         } catch (error) {
-            console.error('Worker pool execution error:', error);
-            // Fallback to direct execution if worker fails
-            try {
-                const argon2Module = await import('argon2');
-                const argon2 = argon2Module.default;
-                return await argon2.hash(password, {
-                    type: argon2.argon2id,
-                    memoryCost: 19456,
-                    timeCost: 2,
-                    parallelism: 1
-                });
-            } catch (fallbackError) {
-                console.error('Fallback hashing failed:', fallbackError);
-                throw new Error('Password hashing failed');
-            }
+            console.error('Worker pool hash error:', error);
+            this.healthy = false;
+            // Fallback to direct execution
+            console.log('⚠️ Falling back to direct Argon2 hash');
+            const argon2 = (await import('argon2')).default;
+            return argon2.hash(password, {
+                type: argon2.argon2id,
+                memoryCost: 19456,
+                timeCost: 2,
+                parallelism: 1
+            });
         }
-    },
+    }
 
-    /**
-     * Terminate the worker pool (call during app shutdown)
-     */
+    async verify(hash: string, password: string): Promise<boolean> {
+        try {
+            return await this.pool.exec('verifyPassword', [hash, password]);
+        } catch (error) {
+            console.error('Worker pool verify error:', error);
+            this.healthy = false;
+            // Fallback to direct execution
+            console.log('⚠️ Falling back to direct Argon2 verify');
+            const argon2 = (await import('argon2')).default;
+            return argon2.verify(hash, password);
+        }
+    }
+
     async terminate(): Promise<void> {
-        await pool.terminate();
+        await this.pool.terminate();
         console.log('Worker pool terminated');
     }
-};
+
+    isHealthy(): boolean {
+        return this.healthy;
+    }
+
+    getStats() {
+        return this.pool.stats();
+    }
+}
+
+// Export singleton
+export const argon = new Argon2Pool();

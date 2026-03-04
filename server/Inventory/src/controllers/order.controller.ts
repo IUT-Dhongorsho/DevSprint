@@ -102,7 +102,7 @@ export class OrderController {
             }
             if (err.code === 'P2002') {
 
-                return res.status(409).json({ message: "You have already ordered today" });
+                return res.status(409).json({ message: "You have already ordered 5 times today" });
             }
             return this.handleError(res, err, "Failed to create order");
         }
