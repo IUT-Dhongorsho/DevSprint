@@ -10,12 +10,13 @@ const StudentUI = () => {
   const [orderStatus, setOrderStatus] = useState(null); // 'pending', 'verified', 'kitchen', 'ready'
   const [loading, setLoading] = useState(false);
   // const [stockStatus, setStockStatus] = useState(null);
+  const api_url = import.meta.env.API_URL|| "http://localhost:5001";
 
   useEffect(() => {
     const handlePastOrders = async () => {
       try {
         const response = await api.get(
-          "http://localhost:8005/api/inventory/order/user",
+          `${api_url}/api/inventory/order/user`,
         );
         if (response.data?.payload?.orders) {
           console.log(response.data.payload.orders);
@@ -31,7 +32,7 @@ const StudentUI = () => {
   useEffect(() => {
     try {
       const token = localStorage.getItem("token");
-      const session = new SSE("http://localhost:8005/api/notification/orders", {
+      const session = new SSE(`${api_url}/api/notification/orders`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "text/plain",
@@ -66,7 +67,7 @@ const StudentUI = () => {
     try {
       // 1. Gateway performs Token Validation & Cache Check
       const response = await api.post(
-        "http://localhost:8005/api/inventory/order",
+        `${api_url}/api/inventory/order`,
       );
       if (response.data?.payload?.order.status)
         setOrderStatus(response.data.payload.order.status);

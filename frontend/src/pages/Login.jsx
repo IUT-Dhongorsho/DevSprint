@@ -15,6 +15,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setToken } = useAuth();
+  const api_url = import.meta.env.API_URL|| "http://localhost:5001";
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -24,7 +25,7 @@ const Login = () => {
     try {
       // Points to Identity Provider (via Gateway)
       const response = await api.post(
-        "http://localhost:8005/api/identity/auth/login",
+        `${api_url}/api/identity/auth/login`,
         { studentId, password },
       );
 

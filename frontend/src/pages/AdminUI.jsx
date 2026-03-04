@@ -63,6 +63,7 @@ const AdminUI = () => {
     setShowSuccess(true);
     
     // Reset after 2 seconds
+    // {forDate: 2026-03-04, quantity: stockAMount}
     setTimeout(() => {
       setShowSuccess(false);
       setIsStockModalOpen(false);
