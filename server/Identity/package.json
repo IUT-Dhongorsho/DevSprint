@@ -7,7 +7,6 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --trace-deprecation --watch src --ext ts --exec \"tsx --env-file=.env src/index.ts\"",
     "build": "tsc"
   },
