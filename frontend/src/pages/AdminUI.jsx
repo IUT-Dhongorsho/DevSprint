@@ -4,7 +4,12 @@ import { Activity, Zap, ShieldAlert, BarChart3, Globe, Flame, Bomb, X, PackagePl
 import api from "../services/api";
 import PageWrapper from "../components/common/PageWrapper";
 
+
 const AdminUI = () => {
+  const [modalStep, setModalStep] = useState(1); 
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const api_url = import.meta.env.API_URL || "http://localhost:5001";
+
   const [isChaosEnabled, setIsChaosEnabled] = useState(false);
   // Modal States
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
@@ -12,11 +17,11 @@ const AdminUI = () => {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const [services, setServices] = useState([
-    { name: "Gateway Service", endpoint: "/health", status: "loading", port: 5001 },
-    { name: "Identity Provider", endpoint: "/api/identity/health", status: "loading", port: 5002 },
-    { name: "Inventory Service", endpoint: "http://localhost:5003/health", status: "loading", port: 5003 },
-    { name: "Kitchen Service", endpoint: "http://localhost:5004/health", status: "loading", port: 5004 },
-    { name: "Notification Hub", endpoint: "http://localhost:5005/health", status: "loading", port: 5005 },
+    { name: "Gateway Service", endpoint: "http://localhost:5001/health", status: "loading", port: 5001 },
+    { name: "Identity Provider", endpoint: "http://localhost:5001/api/identity/health", status: "loading", port: 5002 },
+    { name: "Inventory Service", endpoint: "http://localhost:5001/api/inventory/health", status: "loading", port: 5003 },
+    { name: "Kitchen Service", endpoint: "http://localhost:5001/api/kitchen/health", status: "loading", port: 5004 },
+    { name: "Notification Hub", endpoint: "http://localhost:5001/api/notification/health", status: "loading", port: 5005 },
   ]);
 
   const toggleChaosMode = () => {
@@ -55,19 +60,29 @@ const AdminUI = () => {
   };
 
   // Stock Submit Handler
-  const handleStockSubmit = (e) => {
+  const handleStockSubmit = async (e) => {
     e.preventDefault();
-    if (!stockAmount) return;
+    if (!stockAmount || !selectedDate) return;
     
-    console.log(`Incrementing stock by: ${stockAmount}`);
+    // Final Data Payload
+    const payload = {
+      quantity: parseInt(stockAmount),
+      forDate: selectedDate
+    };
+    
+    console.log("Submitting Stock Data:", payload);
     setShowSuccess(true);
-    
-    // Reset after 2 seconds
-    // {forDate: 2026-03-04, quantity: stockAMount}
+    const res = await api.post(`${api_url}/api/inventory/stock`,  {
+      quantity: payload.quantity,
+      forDate: payload.forDate
+    });
+    console.log(res);
+
     setTimeout(() => {
       setShowSuccess(false);
       setIsStockModalOpen(false);
       setStockAmount("");
+      setModalStep(1); // Reset to step 1 for next time
     }, 2000);
   };
 
@@ -79,69 +94,82 @@ const AdminUI = () => {
         <AnimatePresence>
           {isStockModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              {/* Backdrop */}
               <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsStockModalOpen(false)}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => { setIsStockModalOpen(false); setModalStep(1); }}
                 className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
               />
               
-              {/* Dialog Content */}
               <motion.div 
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
+                initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
                 className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative z-10 border border-slate-100"
               >
-                {/* Header */}
                 <div className="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
                   <h3 className="font-black text-slate-800 tracking-tight flex items-center gap-2">
                     <PackagePlus size={18} className="text-indigo-600" />
-                    Stock Increment Dialog
+                    Stock Increment {modalStep === 2 && " - Select Date"}
                   </h3>
-                  <button 
-                    onClick={() => setIsStockModalOpen(false)}
-                    className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400 hover:text-slate-600"
-                  >
+                  <button onClick={() => { setIsStockModalOpen(false); setModalStep(1); }} className="p-2 text-slate-400 hover:text-slate-600">
                     <X size={20} />
                   </button>
                 </div>
 
-                {/* Body */}
                 <div className="p-8">
                   {showSuccess ? (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex flex-col items-center justify-center py-4 space-y-3"
-                    >
+                    <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-4 space-y-3">
                       <CheckCircle2 size={48} className="text-green-500" />
                       <p className="text-green-600 font-bold">Stock Updated Successfully!</p>
                     </motion.div>
                   ) : (
-                    <form onSubmit={handleStockSubmit} className="space-y-6">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                          Increment Amount (Integer)
-                        </label>
-                        <input 
-                          type="number"
-                          autoFocus
-                          value={stockAmount}
-                          onChange={(e) => setStockAmount(e.target.value)}
-                          placeholder="e.g. 50"
-                          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-mono text-lg"
-                        />
-                      </div>
-                      <button 
-                        type="submit"
-                        className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all transform active:scale-95"
-                      >
-                        Submit Increment
-                      </button>
-                    </form>
+                    <div className="space-y-6">
+                      {modalStep === 1 ? (
+                        /* STEP 1: AMOUNT */
+                        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+                          <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                            Increment Amount
+                          </label>
+                          <input 
+                            type="number" autoFocus value={stockAmount}
+                            onChange={(e) => setStockAmount(e.target.value)}
+                            placeholder="e.g. 50"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-lg"
+                          />
+                          <button 
+                            onClick={() => stockAmount && setModalStep(2)}
+                            className="w-full mt-6 py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all"
+                          >
+                            Next: Choose Date
+                          </button>
+                        </motion.div>
+                      ) : (
+                        /* STEP 2: CALENDAR */
+                        <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+                          <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                            Target Date
+                          </label>
+                          <input 
+                            type="date" value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-lg"
+                          />
+                          <div className="flex gap-2 mt-6">
+                            <button 
+                              onClick={() => setModalStep(1)}
+                              className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200"
+                            >
+                              Back
+                            </button>
+                            <button 
+                              onClick={handleStockSubmit}
+                              className="flex-[2] py-4 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-200 transition-all"
+                            >
+                              Confirm & Submit
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
                   )}
                 </div>
               </motion.div>
