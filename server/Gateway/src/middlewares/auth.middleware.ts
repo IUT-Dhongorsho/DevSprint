@@ -43,7 +43,7 @@ export const userGuard = async (req: Request, res: Response, next: NextFunction)
 
             const userDataFromSvc = response?.data?.payload?.user;
             if (!userDataFromSvc) {
-                return res.status(403).json({ message: "Login required" });
+                return res.status(401).json({ message: "Login required" });
             }
             console.log("From Identity Service", userDataFromSvc.id);
             req.headers.user_id = userDataFromSvc.id;
@@ -59,7 +59,7 @@ export const userGuard = async (req: Request, res: Response, next: NextFunction)
         } catch (err: any) {
             console.error("Identity service fetch failed:", err);
             if (err.response.status === 404) {
-                return res.status(403).json({ message: "Invalid token, login required" });
+                return res.status(401).json({ message: "Invalid token, login required" });
             }
             if (err.response.status === 500) {
                 return res.status(503).json({

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Lottie from "lottie-react";
+
 import api from "../services/api";
 import loginAnimation from "../assets/login-animation.json";
 import PageWrapper from "../components/common/PageWrapper";
@@ -23,7 +24,7 @@ const Login = () => {
     try {
       // Points to Identity Provider (via Gateway)
       const response = await api.post(
-        "http://localhost:5001/api/identity/auth/login",
+        "http://localhost:8005/api/identity/auth/login",
         { studentId, password },
       );
 
@@ -105,7 +106,6 @@ const Login = () => {
                 {error}
               </motion.p>
             )}
-
             <button
               type="submit"
               disabled={loading}
@@ -113,20 +113,16 @@ const Login = () => {
             >
               {loading ? "Authenticating..." : "Login"}
             </button>
-            <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-bold shadow-lg hover:shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50"
-                >
-                {loading ? "Authenticating..." : "Login"}
-            </button>
             <div className="mt-6 text-center">
-                <p className="text-slate-500 text-sm">
-                    Don't have an account?{" "}
-                    <Link to="/signup" className="text-indigo-600 font-bold hover:underline">
-                    Sign Up
-                    </Link>
-                </p>
+              <p className="text-slate-500 text-sm">
+                Don't have an account?{" "}
+                <Link
+                  to="/signup"
+                  className="text-indigo-600 font-bold hover:underline"
+                >
+                  Sign Up
+                </Link>
+              </p>
             </div>
           </form>
         </motion.div>

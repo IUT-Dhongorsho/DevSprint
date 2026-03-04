@@ -25,6 +25,8 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   admin           Admin? 
+
+  @@index([institution_id, password])
 }
 
 model Admin{
@@ -33,5 +35,7 @@ model Admin{
   user          User @relation(fields: [user_id], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([user_id])
 }
 

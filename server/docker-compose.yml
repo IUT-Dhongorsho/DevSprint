@@ -12,9 +12,10 @@ services:
     volumes:
       - user-db-data:/var/lib/postgresql/data
       - ./Database:/docker-entrypoint-initdb.d
-    # profiles: ["dev"]
+    profiles: ["dev"]
     networks:
       - sprint-network 
+
 
 # Caching Service:
   dev-sprint-redis:
@@ -25,13 +26,13 @@ services:
     command: ["redis-server", "--save", "60", "1", "--appendonly", "yes"]
     volumes:
       - redis-data:/data
-    # profiles: ["dev"]
+    profiles: ["dev"]
     networks:
       - sprint-network 
 
 # RabbitMQ Service:
   rabbitmq:
-    image: rabbitmq:4-management
+    image: rabbitmq:4-alpine
     container_name: rabbitmq_service
     ports:
       - "5672:5672"   # AMQP protocol port
@@ -42,7 +43,7 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     restart: always
-    # profiles: ["dev"]
+    profiles: ["dev"]
     networks:
       - sprint-network 
 
@@ -161,7 +162,7 @@ services:
     restart: always
     networks:
       - sprint-network
-    # profiles: ["dev"]
+    profiles: ["dev"]
 
   grafana:
     image: grafana/grafana:latest
@@ -185,7 +186,7 @@ services:
     restart: always
     networks:
       - sprint-network
-    # profiles: ["dev"]
+    profiles: ["dev"]
 
 
 

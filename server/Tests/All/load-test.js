@@ -72,12 +72,12 @@ export default function () {
   const loginRes = http.post(
     `${BASE_URL}/api/identity/auth/login`,
     loginPayload,
-    { headers: { "Content-Type": "application/json" } },
+    { headers: { "Content-Type": "application/json", "x-load-test": "true" } },
   );
 
   const loginSuccess = check(loginRes, {
     "login successful": (r) => r.status === 200,
-    "token received": (r) => r.json("token") !== undefined,
+    "token received": (r) => r.json("payload.token") !== undefined,
   });
 
   if (!loginSuccess) {
@@ -88,7 +88,7 @@ export default function () {
     return;
   }
 
-  token = loginRes.json("token");
+  token = loginRes.json("payload.token");
 
   // Step 3: Check available stock for today
   const stockRes = http.get(`${BASE_URL}/api/inventory/stock/date/${today}`, {
@@ -105,12 +105,18 @@ export default function () {
     return;
   }
 
-  const stocks = stockRes.json();
+  // Handle wrapped response
+  const stockData = stockRes.json();
+  let stocks = [];
+
+  if (stockData.payload && Array.isArray(stockData.payload.stocks)) {
+    stocks = stockData.payload.stocks;
+  } else if (Array.isArray(stockData)) {
+    stocks = stockData;
+  }
 
   // Find available stock
-  const availableStock = Array.isArray(stocks)
-    ? stocks.find((s) => s.status === "Available")
-    : null;
+  const availableStock = stocks.find((s) => s.status === "AVAILABLE");
 
   if (!availableStock) {
     console.log(`No available stock for ${today}`);
@@ -127,7 +133,8 @@ export default function () {
 
   const orderSuccess = check(orderRes, {
     "order placed successfully": (r) => r.status === 201 || r.status === 200,
-    "order confirmation received": (r) => r.json("id") !== undefined,
+    "order confirmation received": (r) =>
+      r.json("payload.order.id") !== undefined,
   });
 
   if (orderSuccess) {
@@ -156,26 +163,81 @@ export function setup() {
   console.log(`Target: ${BASE_URL}`);
   console.log(`Users: 500, Stocks: 500, Duration: 22 minutes`);
 
-  // Optional: Pre-create stock for today
-  const adminToken = __ENV.ADMIN_TOKEN; // You'd need to provide this
+  // Create a single admin user for stock creation
+  const adminUser = {
+    email: "admin@iut.edu",
+    password: "admin123",
+    confirmPassword: "admin123",
+    studentId: "ADMIN001",
+    name: "Admin User",
+  };
 
-  if (adminToken) {
-    const today = new Date().toISOString().split("T")[0];
-    const stockPayload = JSON.stringify({
-      quantity: 500,
-      forDate: today,
-    });
+  // Try to register admin (ignore if already exists)
+  const registerPayload = JSON.stringify(adminUser);
+  http.post(`${BASE_URL}/api/identity/auth/register`, registerPayload, {
+    headers: { "Content-Type": "application/json" },
+  });
 
-    http.post(`${BASE_URL}/api/inventory/stock`, stockPayload, {
-      headers: {
-        Authorization: `Bearer ${adminToken}`,
-        "Content-Type": "application/json",
-      },
-    });
-    console.log(`Created 500 stocks for ${today}`);
+  // Login to get token
+  const loginPayload = JSON.stringify({
+    studentId: adminUser.studentId,
+    password: adminUser.password,
+  });
+
+  const loginRes = http.post(
+    `${BASE_URL}/api/identity/auth/login`,
+    loginPayload,
+    { headers: { "Content-Type": "application/json" } },
+  );
+
+  // Check if login succeeded
+  if (loginRes.status !== 200) {
+    console.error(`Failed to login admin: ${loginRes.status}`);
+    return { startTime: new Date().toISOString(), error: "No admin token" };
   }
 
-  return { startTime: new Date().toISOString() };
+  // Extract token from payload.token
+  const token = loginRes.json("payload.token");
+  console.log(`✓ Admin token obtained`);
+
+  // Create stock for today
+  const today = new Date().toISOString().split("T")[0];
+  const stockPayload = JSON.stringify({
+    quantity: 500,
+    forDate: today,
+  });
+
+  const stockRes = http.post(`${BASE_URL}/api/inventory/stock`, stockPayload, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (stockRes.status === 201 || stockRes.status === 200) {
+    console.log(`✓ Created 500 stocks for ${today}`);
+
+    // Verify stock was created
+    const verifyRes = http.get(
+      `${BASE_URL}/api/inventory/stock/date/${today}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+
+    if (verifyRes.status === 200) {
+      const data = verifyRes.json();
+      const stockCount = data.payload?.stocks?.length || 0;
+      console.log(`📊 Verified ${stockCount} stocks in database`);
+    }
+  } else {
+    console.log(`⚠ Stock creation returned: ${stockRes.status}`);
+  }
+
+  return {
+    startTime: new Date().toISOString(),
+    adminToken: token, // Return token in case needed
+  };
 }
 
 // Teardown function - runs once after test
@@ -183,4 +245,7 @@ export function teardown(data) {
   console.log("=== Load Test Completed ===");
   console.log(`Started: ${data.startTime}`);
   console.log(`Ended: ${new Date().toISOString()}`);
+  if (data.error) {
+    console.log(`Error: ${data.error}`);
+  }
 }

@@ -9,55 +9,50 @@ import prisma from './utils/prisma.js';
 import { InventoryConsumer } from './consumers/inventory.consumer.js';
 import { HealthCheck } from './utils/health.js';
 import { metricsHandler, metricsMiddleware } from './utils/metrics.js';
+import { chaosMiddleware, chaosToggleHandler } from './middlewares/chaos.middleware.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8007;
 
-// Initialize HealthCheck
-const healthCheck = new HealthCheck('inventory');
 
-// Redis Init:
 connectRedis().catch((err) => {
     console.error("Failed to connect to Redis:", err);
 });
+
+const healthCheck = new HealthCheck('inventory');
 healthCheck.setRedisClient(redis);
-
-// Set Prisma client
 healthCheck.setPrismaClient(prisma);
-
-// Set RabbitMQ URL
 healthCheck.setRabbitMQUrl(process.env.RABBITMQ_URL || "amqp://IUT_Dhongorsho:Dhongorsho123@localhost:5672");
 
-// Middleware
 app.use(cors());
 app.use(express.json());
-app.use(metricsMiddleware); // Add metrics middleware
+app.use(metricsMiddleware);
+
+app.use('/chaos/kill', chaosToggleHandler);
+app.use(chaosMiddleware)
+
+
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.path}`);
     next();
 });
 
-
-// RabbitMQ Init and start consumer after connection
 mq.connect()
     .then(() => InventoryConsumer())
     .catch((err) => {
         console.error("Failed to connect RabbitMQ or start consumer:", err);
     });
 
-// Routes
+
 app.use('/order', orderRoutes);
 app.use('/stock', stockRoutes);
 
-// Basic route
-// Health endpoints
 app.get('/health', healthCheck.healthHandler);
 app.get('/health/live', healthCheck.livenessHandler);
 app.get('/health/ready', healthCheck.readinessHandler);
 
-// Metrics endpoint
 app.get('/metrics', metricsHandler);
 
 app.get('/', (req, res) => {

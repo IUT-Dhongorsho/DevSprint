@@ -7,6 +7,7 @@ import { NotificationConsumer } from './consumers/notification.consumer.js';
 import notificationRoutes from './routes/notification.route.js';
 import { metricsHandler, metricsMiddleware } from './utils/metrics.js';
 import { HealthCheck } from './utils/health.js';
+import { chaosMiddleware, chaosToggleHandler } from './middlewares/chaos.middleware.js';
 
 dotenv.config();
 
@@ -25,6 +26,9 @@ healthCheck.setRabbitMQUrl(process.env.RABBITMQ_URL || "amqp://IUT_Dhongorsho:Dh
 app.use(cors());
 app.use(express.json());
 app.use(metricsMiddleware); // Add metrics middleware
+app.use('/chaos/kill', chaosToggleHandler);
+app.use(chaosMiddleware)
+
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.path}`);
     next();

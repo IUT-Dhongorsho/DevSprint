@@ -12,9 +12,26 @@ const StudentUI = () => {
   // const [stockStatus, setStockStatus] = useState(null);
 
   useEffect(() => {
+    const handlePastOrders = async () => {
+      try {
+        const response = await api.get(
+          "http://localhost:8005/api/inventory/order/user",
+        );
+        if (response.data?.payload?.orders) {
+          console.log(response.data.payload.orders);
+        }
+      } catch (error) {
+        console.log(error);
+        alert(error.message);
+      }
+    };
+    handlePastOrders();
+  }, []);
+
+  useEffect(() => {
     try {
       const token = localStorage.getItem("token");
-      const session = new SSE("http://localhost:5001/api/notification/orders", {
+      const session = new SSE("http://localhost:8005/api/notification/orders", {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "text/plain",
@@ -49,7 +66,7 @@ const StudentUI = () => {
     try {
       // 1. Gateway performs Token Validation & Cache Check
       const response = await api.post(
-        "http://localhost:5001/api/inventory/order",
+        "http://localhost:8005/api/inventory/order",
       );
       if (response.data?.payload?.order.status)
         setOrderStatus(response.data.payload.order.status);

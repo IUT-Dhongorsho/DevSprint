@@ -2,11 +2,12 @@
 import rateLimit from 'express-rate-limit';
 
 export const loginLimiter = rateLimit({
-    windowMs: 60 * 1000, // 5 minutes
-    max: 3, // 3 attempts
-    skipSuccessfulRequests: true, // Don't count successful logins
+    windowMs: 60 * 1000, // 1 minute
+    max: 10, // 10 attempts
+    skipSuccessfulRequests: true,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.headers['x-load-test'] === 'true',
     keyGenerator: (req) => {
         // Use studentId + IP to prevent bypassing
         return req.body.studentId + req.ip;

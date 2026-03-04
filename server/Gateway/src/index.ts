@@ -9,6 +9,7 @@ import { adminGuard, userGuard } from './middlewares/auth.middleware.js';
 import { connectRedis, redis } from './utils/redis.js';
 import { stockGuard } from './middlewares/stock.middleware.js';
 import { identityProxy, inventoryOrderProxy, inventoryOthersProxy, inventoryStockProxy, kitchenProxy, notificationProxy } from "./middlewares/proxy.middleware.js";
+import { chaosMiddleware, chaosToggleHandler } from "./middlewares/chaos.middleware.js";
 
 
 const app = express();
@@ -41,21 +42,8 @@ app.use(cors());
 app.use(metricsMiddleware);
 
 
-
-let isKilled = false;
-
-app.post('/chaos/kill', (req, res) => {
-    isKilled = !isKilled;
-    return res.status(200).json({ message: "Successfully switched Service" });
-})
-
-app.use((req, res, next) => {
-    if (isKilled) {
-        return res.status(503).json({ message: "Service killed." })
-    } else {
-        return next()
-    }
-})
+app.use('/chaos/kill', chaosToggleHandler);
+app.use(chaosMiddleware)
 
 // Logger Middleware:
 app.use((req, res, next) => {

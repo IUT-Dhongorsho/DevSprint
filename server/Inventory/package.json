@@ -13,23 +13,6 @@
     "dev": "nodemon --trace-deprecation --watch src --ext ts --exec \"tsx --env-file=.env src/index.ts\"",
     "build": "tsc"
   },
-  "jest": {
-    "testEnvironment": "node",
-    "extensionsToTreatAsEsm": [
-      ".ts"
-    ],
-    "moduleNameMapper": {
-      "^(\\.{1,2}/.*)\\.js$": "$1"
-    },
-    "transform": {
-      "^.+\\.tsx?$": [
-        "ts-jest",
-        {
-          "useESM": true
-        }
-      ]
-    }
-  },
   "devDependencies": {
     "@jest/globals": "^30.2.0",
     "@types/amqplib": "^0.10.8",
