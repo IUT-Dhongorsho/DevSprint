@@ -177,12 +177,13 @@ services:
       GF_SECURITY_ALLOW_EMBEDDING: "true"  # This allows embedding
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_INSTALL_PLUGINS: grafana-piechart-panel
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
     ports:
       - "3000:3000"
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./Grafana/provisioning:/etc/grafana/provisioning  # Mount the whole folder
-      - ./Grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./Grafana/provisioning:/etc/grafana/provisioning
     restart: always
     networks:
       - sprint-network
