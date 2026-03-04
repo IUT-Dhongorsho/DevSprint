@@ -11,14 +11,11 @@ const Signup = () => {
     studentId: "",
     name: "",
     password: "",
-    email: '',
     confirmPassword: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const api_url = import.meta.env.VITE_API_URL|| "http://localhost:5001";
-
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -35,7 +32,7 @@ const Signup = () => {
 
     try {
       const res = await api.post(
-        `${api_url}/api/identity/auth/register`,
+        "http://localhost:8005/api/identity/auth/register",
         {
           studentId: formData.studentId,
           name: formData.name,

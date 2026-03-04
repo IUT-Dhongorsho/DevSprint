@@ -232,15 +232,16 @@ services:
     # profiles: ["loadtest"]
 
 
-
-  # chaos-mesh:
-  #   image: ghcr.io/chaos-mesh/chaos-mesh:latest
-  #   container_name: dev-sprint-chaos
-  #   ports:
-  #     - "2333:2333"
-  #   restart: always
-  #   networks:
-  #     - sprint-network
+  dev-sprint-frontend:
+    build: ../frontend
+    container_name: dev-sprint-frontend
+    environment:
+      VITE_API_URL: "http://localhost:5001"
+    ports:
+    - "5173:5173"
+    restart: always
+    networks:
+    - sprint-network
 
 
 volumes:
@@ -251,6 +252,7 @@ volumes:
   rabbitmq_data:
   prometheus-data:
   grafana-data:
+  
 
 networks:
   sprint-network:
