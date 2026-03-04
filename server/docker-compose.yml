@@ -8,52 +8,50 @@ services:
       POSTGRES_PASSWORD: dhongorsho123
       POSTGRES_DB: user_db
     ports:
-      - "5433:5432"       # different host port to avoid conflicts
+      - "5433:5432"
     volumes:
       - user-db-data:/var/lib/postgresql/data
       - ./Database:/docker-entrypoint-initdb.d
-    profiles: ["dev"]
     networks:
       - sprint-network 
-
 
 # Caching Service:
   dev-sprint-redis:
     image: redis:7-alpine
     container_name: dev-sprint-redis
     ports:
-      - "6380:6379"       # different host port
+      - "6380:6379"
     command: ["redis-server", "--save", "60", "1", "--appendonly", "yes"]
     volumes:
       - redis-data:/data
-    profiles: ["dev"]
     networks:
       - sprint-network 
 
 # RabbitMQ Service:
   rabbitmq:
-    image: rabbitmq:4-alpine
+    image: rabbitmq:4-management
     container_name: rabbitmq_service
     ports:
-      - "5672:5672"   # AMQP protocol port
-      - "15672:15672" # Management UI port
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: "IUT_Dhongorsho"
       RABBITMQ_DEFAULT_PASS: "Dhongorsho123"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     restart: always
-    profiles: ["dev"]
     networks:
       - sprint-network 
 
-# Gateway Service:
+# Gateway Service (The Trigger):
   gateway:
     build: ./Gateway
     container_name: dev-sprint-gateway
     depends_on:
       - dev-sprint-postgres
       - dev-sprint-redis
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # ALLOWS TRIGGERING K6
     environment:
       REDIS_URL: "redis://dev-sprint-redis:6379"
       PORT: 4001
@@ -68,8 +66,7 @@ services:
     networks:
       - sprint-network 
 
-
-# Idnetity Service:
+# Identity Service:
   identity:
     build: ./Identity
     container_name: dev-sprint-identity
@@ -86,7 +83,6 @@ services:
     restart: always
     networks:
       - sprint-network 
-
 
 # Inventory Service:
   inventory:
@@ -108,8 +104,7 @@ services:
     networks:
       - sprint-network 
 
-
-# Ktichen Service:
+# Kitchen Service:
   kitchen:
     build: ./Kitchen
     container_name: dev-sprint-kitchen
@@ -128,8 +123,6 @@ services:
     restart: always
     networks:
       - sprint-network 
-
-
 
 # Notification Service:
   notification:
@@ -150,7 +143,7 @@ services:
     networks:
       - sprint-network 
 
-  # Monitoring Stack
+# Monitoring:
   prometheus:
     image: prom/prometheus:latest
     container_name: dev-sprint-prometheus
@@ -162,7 +155,6 @@ services:
     restart: always
     networks:
       - sprint-network
-    profiles: ["dev"]
 
   grafana:
     image: grafana/grafana:latest
@@ -172,45 +164,26 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: dhongorsho123
-      GF_SERVER_ENABLE_GZIP: "true"
-      GF_DEFAULT_ORG_ID: 1  
-      GF_SECURITY_ALLOW_EMBEDDING: "true"  # This allows embedding
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
       GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_INSTALL_PLUGINS: grafana-piechart-panel
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
     ports:
       - "3000:3000"
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./Grafana/provisioning:/etc/grafana/provisioning  # Mount the whole folder
-      - ./Grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./Grafana/provisioning:/etc/grafana/provisioning
     restart: always
     networks:
       - sprint-network
-    profiles: ["dev"]
 
-
-
+# Load Testing Service:
   dev-sprint-k6:
     image: grafana/k6:latest
     container_name: dev-sprint-k6
     volumes:
-      - ./Tests/All/load-test.js:/scripts/load-test.js  # Mount your test script
-    # command: run /scripts/load-test.js
+      - ./Tests/All/load-test.js:/scripts/load-test.js
     networks:
       - sprint-network
-    # profiles: ["loadtest"]
-
-
-
-  # chaos-mesh:
-  #   image: ghcr.io/chaos-mesh/chaos-mesh:latest
-  #   container_name: dev-sprint-chaos
-  #   ports:
-  #     - "2333:2333"
-  #   restart: always
-  #   networks:
-  #     - sprint-network
-
 
 volumes:
   user-db-data:

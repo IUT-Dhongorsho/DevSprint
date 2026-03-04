@@ -9,8 +9,7 @@ import { adminGuard, userGuard } from './middlewares/auth.middleware.js';
 import { connectRedis, redis } from './utils/redis.js';
 import { stockGuard } from './middlewares/stock.middleware.js';
 import { identityProxy, inventoryOrderProxy, inventoryOthersProxy, inventoryStockProxy, kitchenProxy, notificationProxy } from "./middlewares/proxy.middleware.js";
-import { chaosMiddleware, chaosToggleHandler } from "./middlewares/chaos.middleware.js";
-
+import { exec } from 'child_process';
 
 const app = express();
 const PORT = process.env.PORT || 8005;
@@ -39,18 +38,63 @@ healthCheck.setRedisClient(redis);
 
 // Middleware
 app.use(cors());
+app.use(express.json());
 app.use(metricsMiddleware);
 
 
-app.use('/chaos/kill', chaosToggleHandler);
-app.use(chaosMiddleware)
+
+// let isKilled = false;
+
+// app.post('/chaos/kill', (req, res) => {
+//     isKilled = !isKilled;
+//     return res.status(200).json({ message: "Successfully switched Service" });
+// })
+
+// app.use((req, res, next) => {
+//     if (isKilled) {
+//         return res.status(503).json({ message: "Service killed." })
+//     } else {
+//         return next()
+//     }
+// })
 
 // Logger Middleware:
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.path}`);
     next();
 })
-
+app.post('/api/chaos/load-test', (req, res) => {
+    const { action } = req.body;
+    const containerName = "dev-sprint-k6-runner"; // Unique name to find and kill
+  
+    if (action === 'start') {
+      console.log("🔥 CHAOS ACTIVE: Starting Load Test...");
+      
+      // Use --name so we can find it later to kill it
+      const startCmd = `docker compose run --rm --name ${containerName} -e API_URL=http://gateway:4001 dev-sprint-k6 run /scripts/load-test.js`;
+  
+      exec(startCmd, (err) => {
+        if (err) console.log("k6 stopped or failed.");
+      });
+      
+      return res.json({ status: "started" });
+    } 
+  
+    if (action === 'stop') {
+      console.log("🛡️ CHAOS DISABLED: Killing k6 instantly...");
+      
+      // Force kill and remove the specific container
+      const stopCmd = `docker rm -f ${containerName}`;
+      
+      exec(stopCmd, (err) => {
+        if (err) console.error("Error killing k6:", err.message);
+        else console.log("k6 container terminated.");
+      });
+  
+      return res.json({ status: "stopped" });
+    }
+  });
+  
 app.use("/api/identity", identityProxy);
 app.use(
     "/api/inventory/order",
@@ -80,7 +124,7 @@ app.use(
     userGuard,
     notificationProxy
 );
-app.use(express.json());
+
 // Internal endpoints
 app.get('/', (req, res) => {
     res.status(200).json({ message: "Gateway Service is up and running" });
@@ -91,6 +135,7 @@ app.get('/', (req, res) => {
 app.get('/health', healthCheck.healthHandler);
 app.get('/health/live', healthCheck.livenessHandler);
 app.get('/health/ready', healthCheck.readinessHandler);
+
 
 
 

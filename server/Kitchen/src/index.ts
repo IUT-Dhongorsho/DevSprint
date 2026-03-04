@@ -7,7 +7,6 @@ import prisma from './utils/prisma.js';
 import { KitchenConsumer } from './consumers/kitchen.consumer.js';
 import { HealthCheck } from './utils/health.js';
 import { metricsHandler, metricsMiddleware } from './utils/metrics.js';
-import { chaosMiddleware, chaosToggleHandler } from './middlewares/chaos.middleware.js';
 
 dotenv.config();
 
@@ -33,8 +32,6 @@ healthCheck.setRabbitMQUrl(process.env.RABBITMQ_URL || "amqp://IUT_Dhongorsho:Dh
 app.use(cors());
 app.use(express.json());
 app.use(metricsMiddleware); // Add metrics middleware
-app.use('/chaos/kill', chaosToggleHandler);
-app.use(chaosMiddleware)
 
 // Health endpoints
 app.get('/health', healthCheck.healthHandler);

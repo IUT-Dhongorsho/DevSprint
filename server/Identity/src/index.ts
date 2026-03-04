@@ -7,7 +7,6 @@ import adminRoutes from './routes/admin.routes.js';
 import prisma from './utils/prisma.js';
 import { HealthCheck } from './utils/health.js';
 import { metricsHandler, metricsMiddleware } from './utils/metrics.js';
-import { chaosMiddleware, chaosToggleHandler } from './middlewares/chaos.middleware.js';
 
 dotenv.config();
 
@@ -32,9 +31,6 @@ app.get('/health/ready', healthCheck.readinessHandler);
 
 // Metrics endpoint
 app.get('/metrics', metricsHandler);
-
-app.use('/chaos/kill', chaosToggleHandler);
-app.use(chaosMiddleware)
 
 // Routes
 app.use('/auth', authRoutes);

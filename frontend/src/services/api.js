@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 
 // const { logout } = useAuth();
 const api = axios.create({
-  baseURL: "http://localhost:8005", // Points to Order Gateway
+  baseURL: "http://localhost:5001", // Points to Order Gateway
 });
 
 // Automatically add JWT to headers

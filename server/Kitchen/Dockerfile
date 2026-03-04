@@ -13,7 +13,7 @@ RUN npm run build
 
 
 # ---------- RUNTIME STAGE ----------
-FROM node:24-alpine
+FROM node:22-alpine
 
 WORKDIR /usr/src/app
 

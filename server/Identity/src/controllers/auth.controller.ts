@@ -9,11 +9,7 @@ export const loginUser = async (req: Request, res: Response) => {
     try {
         if (studentId && password) {
             const response = await prisma.user.findUnique({
-                where: { institution_id: studentId },
-                select: {
-                    id: true,
-                    password: true
-                }
+                where: { institution_id: studentId }
             })
             if (!response) return res.status(404).json({ message: "You must register first" });
             if (response?.password) {
@@ -23,7 +19,8 @@ export const loginUser = async (req: Request, res: Response) => {
                 else {
                     const token = encodeJwt(response.id);
                     const user = {
-                        studentId
+                        studentId,
+                        email: response.email,
                     }
                     return res.status(200).json({ payload: { user, token }, message: "User Logged in" });
                 }

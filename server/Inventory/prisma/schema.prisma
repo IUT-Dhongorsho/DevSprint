@@ -30,8 +30,10 @@ model Stock {
 
 enum OrderStatus {
   PENDING
+  // STOCK_VERIFIED
+  // IN_KITCHEN
+  // READY
   COMPLETED
-  CANCELLED
   FAILED
 }
 
@@ -40,7 +42,7 @@ model Order{
   user_id String @db.Uuid
   stock_id String? @db.Uuid
   stock Stock? @relation(fields: [stock_id], references: [id], onDelete: SetNull)
-  forDate DateTime @db.Date
+  forDate DateTime @unique @db.Date
   status OrderStatus @default(PENDING)
   createdAt DateTime @db.Timestamp(6) @default(now()) 
   updatedAt DateTime @updatedAt

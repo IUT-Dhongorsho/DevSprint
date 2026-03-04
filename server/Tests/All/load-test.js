@@ -6,15 +6,12 @@ import { randomString } from "https://jslib.k6.io/k6-utils/1.2.0/index.js";
 // Test configuration
 export const options = {
   stages: [
-    { duration: "2m", target: 100 }, // Ramp up to 100 users
-    { duration: "5m", target: 200 }, // Ramp to 200 users
-    { duration: "8m", target: 500 }, // Ramp to 500 users
-    { duration: "5m", target: 500 }, // Stay at 500 users
-    { duration: "2m", target: 0 }, // Ramp down
+    { duration: '20s', target: 100 }, // Extremely fast ramp-up
+    { duration: '10m', target: 500 }, // Stay at 500 users for 10 mins (manual stop required)
   ],
   thresholds: {
-    http_req_duration: ["p(95)<2000"], // 95% of requests < 2s
-    http_req_failed: ["rate<0.05"], // <5% failure rate
+    http_req_duration: ['p(95)<1000'], 
+    http_req_failed: ['rate<0.01'],   
   },
 };
 
@@ -72,12 +69,12 @@ export default function () {
   const loginRes = http.post(
     `${BASE_URL}/api/identity/auth/login`,
     loginPayload,
-    { headers: { "Content-Type": "application/json", "x-load-test": "true" } },
+    { headers: { "Content-Type": "application/json" } },
   );
 
   const loginSuccess = check(loginRes, {
     "login successful": (r) => r.status === 200,
-    "token received": (r) => r.json("payload.token") !== undefined,
+    "token received": (r) => r.json("token") !== undefined,
   });
 
   if (!loginSuccess) {
@@ -88,7 +85,7 @@ export default function () {
     return;
   }
 
-  token = loginRes.json("payload.token");
+  token = loginRes.json("token");
 
   // Step 3: Check available stock for today
   const stockRes = http.get(`${BASE_URL}/api/inventory/stock/date/${today}`, {
@@ -105,18 +102,12 @@ export default function () {
     return;
   }
 
-  // Handle wrapped response
-  const stockData = stockRes.json();
-  let stocks = [];
-
-  if (stockData.payload && Array.isArray(stockData.payload.stocks)) {
-    stocks = stockData.payload.stocks;
-  } else if (Array.isArray(stockData)) {
-    stocks = stockData;
-  }
+  const stocks = stockRes.json();
 
   // Find available stock
-  const availableStock = stocks.find((s) => s.status === "AVAILABLE");
+  const availableStock = Array.isArray(stocks)
+    ? stocks.find((s) => s.status === "Available")
+    : null;
 
   if (!availableStock) {
     console.log(`No available stock for ${today}`);
@@ -133,8 +124,7 @@ export default function () {
 
   const orderSuccess = check(orderRes, {
     "order placed successfully": (r) => r.status === 201 || r.status === 200,
-    "order confirmation received": (r) =>
-      r.json("payload.order.id") !== undefined,
+    "order confirmation received": (r) => r.json("id") !== undefined,
   });
 
   if (orderSuccess) {
@@ -163,81 +153,26 @@ export function setup() {
   console.log(`Target: ${BASE_URL}`);
   console.log(`Users: 500, Stocks: 500, Duration: 22 minutes`);
 
-  // Create a single admin user for stock creation
-  const adminUser = {
-    email: "admin@iut.edu",
-    password: "admin123",
-    confirmPassword: "admin123",
-    studentId: "ADMIN001",
-    name: "Admin User",
-  };
+  // Optional: Pre-create stock for today
+  const adminToken = __ENV.ADMIN_TOKEN; // You'd need to provide this
 
-  // Try to register admin (ignore if already exists)
-  const registerPayload = JSON.stringify(adminUser);
-  http.post(`${BASE_URL}/api/identity/auth/register`, registerPayload, {
-    headers: { "Content-Type": "application/json" },
-  });
+  if (adminToken) {
+    const today = new Date().toISOString().split("T")[0];
+    const stockPayload = JSON.stringify({
+      quantity: 500,
+      forDate: today,
+    });
 
-  // Login to get token
-  const loginPayload = JSON.stringify({
-    studentId: adminUser.studentId,
-    password: adminUser.password,
-  });
-
-  const loginRes = http.post(
-    `${BASE_URL}/api/identity/auth/login`,
-    loginPayload,
-    { headers: { "Content-Type": "application/json" } },
-  );
-
-  // Check if login succeeded
-  if (loginRes.status !== 200) {
-    console.error(`Failed to login admin: ${loginRes.status}`);
-    return { startTime: new Date().toISOString(), error: "No admin token" };
-  }
-
-  // Extract token from payload.token
-  const token = loginRes.json("payload.token");
-  console.log(`✓ Admin token obtained`);
-
-  // Create stock for today
-  const today = new Date().toISOString().split("T")[0];
-  const stockPayload = JSON.stringify({
-    quantity: 500,
-    forDate: today,
-  });
-
-  const stockRes = http.post(`${BASE_URL}/api/inventory/stock`, stockPayload, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (stockRes.status === 201 || stockRes.status === 200) {
-    console.log(`✓ Created 500 stocks for ${today}`);
-
-    // Verify stock was created
-    const verifyRes = http.get(
-      `${BASE_URL}/api/inventory/stock/date/${today}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
+    http.post(`${BASE_URL}/api/inventory/stock`, stockPayload, {
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+        "Content-Type": "application/json",
       },
-    );
-
-    if (verifyRes.status === 200) {
-      const data = verifyRes.json();
-      const stockCount = data.payload?.stocks?.length || 0;
-      console.log(`📊 Verified ${stockCount} stocks in database`);
-    }
-  } else {
-    console.log(`⚠ Stock creation returned: ${stockRes.status}`);
+    });
+    console.log(`Created 500 stocks for ${today}`);
   }
 
-  return {
-    startTime: new Date().toISOString(),
-    adminToken: token, // Return token in case needed
-  };
+  return { startTime: new Date().toISOString() };
 }
 
 // Teardown function - runs once after test
@@ -245,7 +180,4 @@ export function teardown(data) {
   console.log("=== Load Test Completed ===");
   console.log(`Started: ${data.startTime}`);
   console.log(`Ended: ${new Date().toISOString()}`);
-  if (data.error) {
-    console.log(`Error: ${data.error}`);
-  }
 }
